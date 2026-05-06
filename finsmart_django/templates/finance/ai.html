@@ -171,8 +171,35 @@ function openSession(sessionKey) {
 }
 
 function setActiveHistoryItem(sessionKey) {
-  document.querySelectorAll('#chatHistoryMenu [data-session-key]').forEach(item => {
-    item.classList.toggle('active', item.dataset.sessionKey === sessionKey);
+  document.querySelectorAll('#chatHistoryMenu .list-group-item').forEach(item => {
+    const form = item.querySelector('form input[name="session_key"]');
+    if (form && form.value === sessionKey) {
+      item.classList.add('active');
+      // Cập nhật màu text cho active state
+      const textMuted = item.querySelectorAll('.text-muted');
+      textMuted.forEach(el => {
+        el.classList.remove('text-muted');
+        el.classList.add('text-white-50');
+      });
+      const deleteBtn = item.querySelector('button[type="submit"]');
+      if (deleteBtn) {
+        deleteBtn.classList.remove('text-danger');
+        deleteBtn.classList.add('text-white-50');
+      }
+    } else {
+      item.classList.remove('active');
+      // Khôi phục màu text cho inactive state
+      const textWhite = item.querySelectorAll('.text-white-50');
+      textWhite.forEach(el => {
+        el.classList.remove('text-white-50');
+        el.classList.add('text-muted');
+      });
+      const deleteBtn = item.querySelector('button[type="submit"]');
+      if (deleteBtn) {
+        deleteBtn.classList.remove('text-white-50');
+        deleteBtn.classList.add('text-danger');
+      }
+    }
   });
 }
 
@@ -194,12 +221,26 @@ function addHistoryItem(sessionKey, text, timeText = null) {
   const empty = document.getElementById('chatHistoryEmpty');
   if (empty) empty.remove();
 
-  const existing = menu.querySelector(`[data-session-key="${sessionKey}"]`);
+  // Tìm item hiện có trong sidebar
+  let existing = null;
+  menu.querySelectorAll('.list-group-item').forEach(item => {
+    const form = item.querySelector('form input[name="session_key"]');
+    if (form && form.value === sessionKey) {
+      existing = item;
+    }
+  });
+
   if (existing) {
+    // Cập nhật item hiện có
     const titleEl = existing.querySelector('.small.fw-semibold');
-    const timeEl = existing.querySelector('.text-muted');
-    titleEl.textContent = text.length > 44 ? `${text.slice(0, 44)}...` : text;
-    timeEl.textContent = timeText || formatDateToMinute(new Date());
+    const timeEl = existing.querySelector('[style*="font-size:11px"]');
+    if (titleEl) {
+      titleEl.textContent = text.length > 44 ? `${text.slice(0, 44)}...` : text;
+    }
+    if (timeEl) {
+      timeEl.textContent = timeText || formatDateToMinute(new Date());
+    }
+    // Di chuyển lên đầu
     menu.prepend(existing);
     activeSessionKey = sessionKey;
     setActiveHistoryItem(sessionKey);
@@ -207,24 +248,67 @@ function addHistoryItem(sessionKey, text, timeText = null) {
     return;
   }
 
-  const btn = document.createElement('button');
-  btn.type = 'button';
-  btn.className = 'list-group-item list-group-item-action px-2 py-2';
-  btn.dataset.sessionKey = sessionKey;
-  btn.onclick = () => openSession(sessionKey);
+  // Tạo item mới nếu chưa có
+  const wrapper = document.createElement('div');
+  wrapper.className = 'list-group-item list-group-item-action px-2 py-2';
+  wrapper.style.position = 'relative';
+  wrapper.style.paddingRight = '35px';
+
+  const clickDiv = document.createElement('div');
+  clickDiv.style.cursor = 'pointer';
+  clickDiv.onclick = () => openSession(sessionKey);
 
   const title = document.createElement('div');
-  title.className = 'small fw-semibold text-truncate';
+  title.className = 'small fw-semibold';
+  title.style.maxWidth = '100%';
+  title.style.wordWrap = 'break-word';
+  title.style.overflowWrap = 'break-word';
+  title.style.lineHeight = '1.4';
   title.textContent = text.length > 44 ? `${text.slice(0, 44)}...` : text;
 
   const sub = document.createElement('div');
-  sub.className = 'text-muted';
+  sub.className = 'text-muted mt-1';
   sub.style.fontSize = '11px';
   sub.textContent = timeText || formatDateToMinute(new Date());
 
-  btn.appendChild(title);
-  btn.appendChild(sub);
-  menu.prepend(btn);
+  clickDiv.appendChild(title);
+  clickDiv.appendChild(sub);
+
+  const form = document.createElement('form');
+  form.method = 'post';
+  form.action = '{% url "ai_delete_session" %}';
+  form.className = 'm-0';
+  form.style.position = 'absolute';
+  form.style.top = '8px';
+  form.style.right = '8px';
+  form.onsubmit = () => confirm('Xóa lịch sử chat này?');
+
+  const csrf = document.createElement('input');
+  csrf.type = 'hidden';
+  csrf.name = 'csrfmiddlewaretoken';
+  csrf.value = csrfToken;
+
+  const sessionInput = document.createElement('input');
+  sessionInput.type = 'hidden';
+  sessionInput.name = 'session_key';
+  sessionInput.value = sessionKey;
+
+  const deleteBtn = document.createElement('button');
+  deleteBtn.type = 'submit';
+  deleteBtn.className = 'btn btn-sm p-0 border-0 bg-transparent text-danger';
+  deleteBtn.title = 'Xóa';
+  deleteBtn.style.fontSize = '16px';
+  deleteBtn.style.lineHeight = '1';
+  deleteBtn.style.opacity = '0.7';
+  deleteBtn.innerHTML = '<i class="bi bi-trash"></i>';
+
+  form.appendChild(csrf);
+  form.appendChild(sessionInput);
+  form.appendChild(deleteBtn);
+
+  wrapper.appendChild(clickDiv);
+  wrapper.appendChild(form);
+  menu.prepend(wrapper);
 
   while (menu.children.length > 30) {
     menu.removeChild(menu.lastElementChild);
