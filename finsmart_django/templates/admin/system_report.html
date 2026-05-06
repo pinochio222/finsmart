@@ -1,0 +1,273 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static money %}
+
+{% block title %}{{ title }} | {{ site_title|default:_('Django site admin') }}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .report-container {
+        padding: 20px;
+        max-width: 1200px;
+    }
+    
+    .report-header {
+        background: #417690;
+        color: white;
+        padding: 20px;
+        border-radius: 4px;
+        margin-bottom: 30px;
+    }
+    
+    .report-header h1 {
+        margin: 0;
+        font-size: 24px;
+    }
+    
+    .report-header p {
+        margin: 5px 0 0 0;
+        opacity: 0.9;
+    }
+    
+    .stats-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .stat-card {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 20px;
+    }
+    
+    .stat-card h3 {
+        margin: 0 0 10px 0;
+        font-size: 14px;
+        color: #666;
+        text-transform: uppercase;
+        font-weight: 600;
+    }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: bold;
+        color: #417690;
+        margin: 10px 0;
+    }
+    
+    .stat-label {
+        font-size: 13px;
+        color: #999;
+    }
+    
+    .section {
+        background: white;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 20px;
+        margin-bottom: 20px;
+    }
+    
+    .section h2 {
+        margin: 0 0 15px 0;
+        font-size: 18px;
+        color: #417690;
+        border-bottom: 2px solid #417690;
+        padding-bottom: 10px;
+    }
+    
+    .info-row {
+        display: flex;
+        justify-content: space-between;
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    
+    .info-row:last-child {
+        border-bottom: none;
+    }
+    
+    .info-label {
+        font-weight: 600;
+        color: #333;
+    }
+    
+    .info-value {
+        color: #666;
+    }
+    
+    .back-link {
+        display: inline-block;
+        color: #417690;
+        text-decoration: none;
+        margin-bottom: 20px;
+        font-weight: 500;
+    }
+    
+    .back-link:hover {
+        text-decoration: underline;
+    }
+    
+    .positive {
+        color: #28a745;
+    }
+    
+    .negative {
+        color: #dc3545;
+    }
+    
+    .category-list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .category-item {
+        padding: 8px 0;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        justify-content: space-between;
+    }
+    
+    .category-item:last-child {
+        border-bottom: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="report-container">
+    <a href="{% url 'admin:index' %}" class="back-link">← Quay lại Trang Chủ Admin</a>
+    
+    <div class="report-header">
+        <h1>📊 {{ title }}</h1>
+        <p>Thống kê tổng hợp hoạt động hệ thống FinSmart</p>
+    </div>
+
+    <!-- UC10: Thống kê người dùng -->
+    <div class="section">
+        <h2>👥 Quản Lý Người Dùng</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Tổng Người Dùng</h3>
+                <div class="stat-value">{{ total_users }}</div>
+                <div class="stat-label">người dùng</div>
+            </div>
+            <div class="stat-card">
+                <h3>Đang Hoạt Động</h3>
+                <div class="stat-value positive">{{ active_users }}</div>
+                <div class="stat-label">người dùng active</div>
+            </div>
+            <div class="stat-card">
+                <h3>Người Dùng Mới (30 ngày)</h3>
+                <div class="stat-value">{{ new_users_30days }}</div>
+                <div class="stat-label">người dùng mới</div>
+            </div>
+            <div class="stat-card">
+                <h3>Không Hoạt Động</h3>
+                <div class="stat-value negative">{{ inactive_users }}</div>
+                <div class="stat-label">người dùng inactive</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- UC11: Thống kê danh mục -->
+    <div class="section">
+        <h2>🏷️ Quản Lý Danh Mục Mặc Định</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Tổng Danh Mục</h3>
+                <div class="stat-value">{{ total_categories }}</div>
+                <div class="stat-label">danh mục hệ thống</div>
+            </div>
+            <div class="stat-card">
+                <h3>Danh Mục Đang Dùng</h3>
+                <div class="stat-value positive">{{ active_categories }}</div>
+                <div class="stat-label">danh mục active</div>
+            </div>
+        </div>
+        
+        {% if user_categories %}
+        <h3 style="margin-top: 20px; margin-bottom: 10px; font-size: 14px; color: #666;">Top 5 Danh Mục Được Sử Dụng Nhiều Nhất:</h3>
+        <ul class="category-list">
+            {% for cat in user_categories %}
+            <li class="category-item">
+                <span>{{ cat.category__name|default:"Không có danh mục" }}</span>
+                <span><strong>{{ cat.count }}</strong> giao dịch</span>
+            </li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    </div>
+
+    <!-- UC12: Thống kê giao dịch -->
+    <div class="section">
+        <h2>💰 Thống Kê Giao Dịch</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Tổng Giao Dịch</h3>
+                <div class="stat-value">{{ total_transactions }}</div>
+                <div class="stat-label">giao dịch</div>
+            </div>
+            <div class="stat-card">
+                <h3>Giao Dịch (30 ngày)</h3>
+                <div class="stat-value">{{ transactions_30days }}</div>
+                <div class="stat-label">giao dịch gần đây</div>
+            </div>
+            <div class="stat-card">
+                <h3>Tổng Thu Nhập</h3>
+                <div class="stat-value positive">{{ total_income|comma_money }}đ</div>
+                <div class="stat-label">tổng thu</div>
+            </div>
+            <div class="stat-card">
+                <h3>Tổng Chi Tiêu</h3>
+                <div class="stat-value negative">{{ total_expense|comma_money }}đ</div>
+                <div class="stat-label">tổng chi</div>
+            </div>
+        </div>
+        
+        <div class="info-row">
+            <span class="info-label">Số Dư Ròng:</span>
+            <span class="info-value {% if net_balance >= 0 %}positive{% else %}negative{% endif %}">
+                {{ net_balance|comma_money }}đ
+            </span>
+        </div>
+    </div>
+
+    <!-- Thống kê ngân sách & mục tiêu -->
+    <div class="section">
+        <h2>🎯 Ngân Sách & Mục Tiêu</h2>
+        <div class="stats-grid">
+            <div class="stat-card">
+                <h3>Tổng Ngân Sách</h3>
+                <div class="stat-value">{{ total_budgets }}</div>
+                <div class="stat-label">ngân sách</div>
+            </div>
+            <div class="stat-card">
+                <h3>Tổng Mục Tiêu</h3>
+                <div class="stat-value">{{ total_goals }}</div>
+                <div class="stat-label">mục tiêu</div>
+            </div>
+            <div class="stat-card">
+                <h3>Mục Tiêu Hoàn Thành</h3>
+                <div class="stat-value positive">{{ completed_goals }}</div>
+                <div class="stat-label">đã hoàn thành</div>
+            </div>
+            <div class="stat-card">
+                <h3>Tỷ Lệ Hoàn Thành</h3>
+                <div class="stat-value">{{ goal_completion_rate }}%</div>
+                <div class="stat-label">tỷ lệ thành công</div>
+            </div>
+        </div>
+    </div>
+
+    <div style="text-align: center; margin-top: 30px; padding: 20px; background: #f8f9fa; border-radius: 4px;">
+        <p style="margin: 0; color: #666;">
+            Báo cáo được tạo tự động bởi hệ thống FinSmart
+        </p>
+    </div>
+</div>
+{% endblock %}

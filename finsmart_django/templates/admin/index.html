@@ -1,0 +1,253 @@
+{% extends "admin/base_site.html" %}
+{% load i18n static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    #content-main {
+        padding: 0;
+    }
+    
+    .admin-dashboard {
+        padding: 30px;
+        background: #f5f5f5;
+    }
+    
+    .dashboard-header {
+        margin-bottom: 30px;
+    }
+    
+    .dashboard-header h1 {
+        font-size: 28px;
+        color: #333;
+        margin: 0 0 5px 0;
+        font-weight: 600;
+    }
+    
+    .dashboard-header p {
+        color: #666;
+        margin: 0;
+        font-size: 14px;
+    }
+    
+    /* Quick Actions Section */
+    .quick-actions {
+        margin-bottom: 30px;
+    }
+    
+    .section-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 15px 0;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #417690;
+    }
+    
+    .action-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+        gap: 20px;
+        margin-bottom: 30px;
+    }
+    
+    .action-card {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        transition: all 0.3s ease;
+        text-decoration: none;
+        display: block;
+        border-left: 4px solid #417690;
+    }
+    
+    .action-card:hover {
+        box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+        transform: translateY(-2px);
+    }
+    
+    .action-card-icon {
+        font-size: 32px;
+        margin-bottom: 10px;
+    }
+    
+    .action-card-title {
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        margin: 0 0 8px 0;
+    }
+    
+    .action-card-desc {
+        font-size: 13px;
+        color: #666;
+        margin: 0;
+        line-height: 1.5;
+    }
+    
+    /* Management Section */
+    .management-section {
+        background: white;
+        border-radius: 8px;
+        padding: 25px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .management-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 20px;
+        margin-top: 20px;
+    }
+    
+    .management-item {
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        padding: 20px;
+        background: #fafafa;
+    }
+    
+    .management-item h3 {
+        font-size: 16px;
+        font-weight: 600;
+        color: #417690;
+        margin: 0 0 12px 0;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .management-links {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+    }
+    
+    .management-links li {
+        margin-bottom: 8px;
+    }
+    
+    .management-links a {
+        color: #417690;
+        text-decoration: none;
+        font-size: 14px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        padding: 4px 0;
+        transition: color 0.2s;
+    }
+    
+    .management-links a:hover {
+        color: #2e5266;
+        text-decoration: underline;
+    }
+    
+    .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 12px;
+        font-size: 11px;
+        font-weight: 600;
+        background: #417690;
+        color: white;
+        margin-left: 6px;
+    }
+    
+    /* Hide default Django admin app list */
+    .app-list {
+        display: none;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="admin-dashboard">
+    <div class="dashboard-header">
+        <h1>🏠 Bảng Điều Khiển Admin</h1>
+        <p>Quản lý hệ thống FinSmart - Phần mềm quản lý tài chính cá nhân</p>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="quick-actions">
+        <h2 class="section-title">⚡ Truy Cập Nhanh</h2>
+        <div class="action-cards">
+            <a href="{% url 'system_report' %}" class="action-card">
+                <div class="action-card-icon">📊</div>
+                <h3 class="action-card-title">Báo Cáo Hệ Thống</h3>
+                <p class="action-card-desc">Xem thống kê tổng hợp hoạt động hệ thống, người dùng, giao dịch và danh mục</p>
+            </a>
+        </div>
+    </div>
+
+    <!-- Management Section -->
+    <div class="management-section">
+        <h2 class="section-title">⚙️ Quản Lý Hệ Thống</h2>
+        <div class="management-grid">
+            
+            <!-- UC10: Quản lý người dùng -->
+            <div class="management-item">
+                <h3>👥 Quản Lý Người Dùng</h3>
+                <ul class="management-links">
+                    <li>
+                        <a href="{% url 'admin:auth_regularuser_changelist' %}">
+                            → Người dùng
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin:auth_regularuser_add' %}">
+                            ➕ Thêm người dùng mới
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin:auth_adminaccount_changelist' %}">
+                            → Quản trị viên
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- UC11: Quản lý danh mục -->
+            <div class="management-item">
+                <h3>🏷️ Quản Lý Danh Mục</h3>
+                <ul class="management-links">
+                    <li>
+                        <a href="{% url 'admin:finance_category_changelist' %}">
+                            → Danh mục mặc định
+                        </a>
+                    </li>
+                    <li>
+                        <a href="{% url 'admin:finance_category_add' %}">
+                            ➕ Thêm danh mục mới
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Quản trị viên -->
+            <div class="management-item">
+                <h3>🔧 Quản Trị Viên</h3>
+                <ul class="management-links">
+                    <li>
+                        <a href="{% url 'admin:auth_group_changelist' %}">
+                            → Nhóm quyền
+                        </a>
+                    </li>
+                </ul>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Footer Info -->
+    <div style="margin-top: 30px; padding: 20px; background: white; border-radius: 8px; text-align: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+        <p style="margin: 0; color: #666; font-size: 13px;">
+            <strong>FinSmart Admin Panel</strong> - Hệ thống quản lý tài chính cá nhân cho sinh viên
+        </p>
+        <p style="margin: 5px 0 0 0; color: #999; font-size: 12px;">
+            Version 1.0 | © 2026 FinSmart Team
+        </p>
+    </div>
+</div>
+{% endblock %}

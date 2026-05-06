@@ -1,0 +1,171 @@
+{% extends 'finance/base.html' %}
+{% load humanize %}
+{% load money %}
+
+{% block title %}Mục Tiêu Tiết Kiệm{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>🎯 Mục Tiêu Tiết Kiệm</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'goal_add' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Thêm Mục Tiêu
+            </a>
+        </div>
+    </div>
+
+    <!-- Tổng Số Dư Hiện Có -->
+    <div class="card mb-4 bg-light border-primary">
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-auto">
+                    <i class="bi bi-wallet2" style="font-size: 2rem; color: #1d4ed8;"></i>
+                </div>
+                <div class="col">
+                    <h6 class="text-muted mb-1">💰 Số dư tháng</h6>
+                    <h3 class="mb-0 income-text">{% money total_remaining_all_months %}</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% if goals %}
+        <div class="row">
+            {% for goal_item in goals %}
+                {% with goal=goal_item.goal %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <!-- Tiêu đề -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title">{{ goal.icon }} {{ goal.name }}</h5>
+                                    <small class="text-muted">Hạn chót: {{ goal.deadline|date:"d/m/Y" }}</small>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'goal_deposit' goal.id %}" class="btn btn-sm btn-success" title="Nạp tiền">
+                                        <i class="bi bi-plus-circle"></i> Nạp
+                                    </a>
+                                    <a href="{% url 'goal_edit' goal.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'goal_delete' goal.id %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Tiến độ -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Tiến độ</span>
+                                    <strong>{{ goal.percentage }}%</strong>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar" role="progressbar" 
+                                         style="width: {{ goal.percentage }}%"
+                                         aria-valuenow="{{ goal.percentage }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    {% money goal.current_amount %} / {% money goal.target_amount %}
+                                </small>
+                            </div>
+
+                            <!-- Thông tin cơ bản -->
+                            <div class="mb-3">
+                                {% if goal.monthly_required %}
+                                <p class="mb-1">
+                                    <strong>Tiết kiệm cần/tháng:</strong> 
+                                    <span class="badge bg-info">{% money goal.monthly_required %}</span>
+                                </p>
+                                {% endif %}
+                                <p class="mb-1">
+                                    <strong>Còn lại:</strong> 
+                                    <span class="badge bg-warning">{% money goal.remaining %}</span>
+                                </p>
+                            </div>
+
+                            <!-- Tiền Tiết Kiệm Thực Tế -->
+                            <div class="alert alert-success mb-3">
+                                <h6 class="alert-heading">💰 Tiền Tiết Kiệm Thực Tế</h6>
+                                <p class="mb-2">
+                                    <strong>Số tiền đã nạp:</strong> 
+                                    <span class="badge bg-success">{% money goal.current_amount %}</span>
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Tiến độ:</strong>
+                                    <div class="progress mt-2">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {{ goal.percentage }}%"
+                                             aria-valuenow="{{ goal.percentage }}" 
+                                             aria-valuemin="0" aria-valuemax="100">
+                                            {{ goal.percentage }}%
+                                        </div>
+                                    </div>
+                                </p>
+                            </div>
+
+                            <!-- Khả thi -->
+                            {% if goal_item.required_savings_rate %}
+                            <div class="alert {% if goal_item.is_achievable %}alert-success{% else %}alert-warning{% endif %} mb-0">
+                                <p class="mb-0">
+                                    <strong>Tỷ lệ tiết kiệm cần:</strong> {{ goal_item.required_savings_rate }}%
+                                    {% if goal_item.is_achievable %}
+                                        <span class="badge bg-success">✅ Khả thi</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">⚠️ Khó đạt</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation" class="d-flex justify-content-center mt-4">
+          <ul class="pagination mb-0">
+            {% if goals.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1">Đầu</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ goals.previous_page_number }}">Trước</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Đầu</span></li>
+            <li class="page-item disabled"><span class="page-link">Trước</span></li>
+            {% endif %}
+            
+            <li class="page-item active"><span class="page-link">{{ goals.number }} / {{ paginator.num_pages }}</span></li>
+            
+            {% if goals.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ goals.next_page_number }}">Sau</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ paginator.num_pages }}">Cuối</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Sau</span></li>
+            <li class="page-item disabled"><span class="page-link">Cuối</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0">Bạn chưa có mục tiêu tiết kiệm nào. <a href="{% url 'goal_add' %}">Tạo mục tiêu ngay</a></p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

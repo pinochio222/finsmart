@@ -1,0 +1,72 @@
+{% extends "admin/base.html" %}
+
+{% block title %}{{ block.super }}{% endblock %}
+
+{% block extrahead %}
+<style>
+    /* Ẩn thanh tìm kiếm chính */
+    #toolbar form {
+        display: none !important;
+    }
+    
+    /* Ẩn nút tìm kiếm */
+    .search-form {
+        display: none !important;
+    }
+    
+    /* Ẩn các mục tìm kiếm trong danh sách */
+    .search {
+        display: none !important;
+    }
+    
+    /* Ẩn các thanh tìm kiếm app_list ở phía trên */
+    .app-list-search {
+        display: none !important;
+    }
+    
+    /* Ẩn input tìm kiếm trong app list */
+    .app-list input[type="search"],
+    .app-list input[type="text"] {
+        display: none !important;
+    }
+    
+    /* Ẩn button tìm kiếm trong app list */
+    .app-list button[type="submit"] {
+        display: none !important;
+    }
+    
+    /* Ẩn toàn bộ search container */
+    .search-container {
+        display: none !important;
+    }
+    
+    /* Ẩn các input search ở header */
+    header input[type="search"],
+    header input[type="text"],
+    header .search {
+        display: none !important;
+    }
+    
+    /* Ẩn tất cả input và button trong app-list */
+    .app-list input,
+    .app-list button {
+        display: none !important;
+    }
+    
+    /* Ẩn các form tìm kiếm */
+    form[method="get"] input,
+    form[method="get"] button {
+        display: none !important;
+    }
+    
+    /* Ẩn placeholder tìm kiếm */
+    input::placeholder {
+        display: none !important;
+    }
+    
+    /* Ẩn tất cả các div chứa search */
+    div[class*="search"] {
+        display: none !important;
+    }
+</style>
+{% endblock %}

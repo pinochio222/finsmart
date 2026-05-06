@@ -1,0 +1,43 @@
+{% extends 'finance/base.html' %}
+{% load money %}
+
+{% block title %}Xác Nhận Xóa Mục Tiêu{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card border-danger">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0">⚠️ Xác Nhận Xóa Mục Tiêu</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">
+                        Bạn có chắc chắn muốn xóa mục tiêu <strong>"{{ object.name }}"</strong> không?
+                    </p>
+                    <p class="text-muted mb-3">
+                        <small>Hành động này không thể hoàn tác. Tất cả dữ liệu liên quan sẽ bị xóa.</small>
+                    </p>
+
+                    <div class="alert alert-info mb-3">
+                        <p class="mb-1"><strong>Mục tiêu:</strong> {{ object.name }}</p>
+                        <p class="mb-1"><strong>Số tiền mục tiêu:</strong> {{ object.target_amount|comma_money }}đ</p>
+                        <p class="mb-1"><strong>Số tiền hiện tại:</strong> {{ object.current_amount|comma_money }}đ</p>
+                        <p class="mb-0"><strong>Hạn chót:</strong> {{ object.deadline|date:"d/m/Y" }}</p>
+                    </div>
+
+                    <form method="post" class="d-flex gap-2">
+                        {% csrf_token %}
+                        <button type="submit" class="btn btn-danger flex-grow-1">
+                            <i class="fas fa-trash"></i> Xóa Mục Tiêu
+                        </button>
+                        <a href="{% url 'goals' %}" class="btn btn-secondary flex-grow-1">
+                            <i class="fas fa-times"></i> Hủy
+                        </a>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

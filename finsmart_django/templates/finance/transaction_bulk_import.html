@@ -1,0 +1,139 @@
+{% extends 'finance/base.html' %}
+{% load static %}
+
+{% block title %}{{ title }} - FinSmart{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">📊 {{ title }}</h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <strong>💡 Hướng dẫn:</strong> Nhập dữ liệu giao dịch theo định dạng CSV. Mỗi dòng là một giao dịch.
+                    </div>
+
+                    <form method="post">
+                        {% csrf_token %}
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.transactions_data.id_for_label }}" class="form-label">
+                                {{ form.transactions_data.label }}
+                            </label>
+                            {{ form.transactions_data }}
+                            {% if form.transactions_data.help_text %}
+                                <small class="form-text text-muted d-block mt-2">
+                                    {{ form.transactions_data.help_text|safe }}
+                                </small>
+                            {% endif %}
+                            {% if form.transactions_data.errors %}
+                                <div class="alert alert-danger mt-2">
+                                    {{ form.transactions_data.errors }}
+                                </div>
+                            {% endif %}
+                        </div>
+
+                        <div class="alert alert-secondary">
+                            <strong>📝 Ví dụ định dạng:</strong>
+                            <pre style="margin-bottom: 0;">15/1/2026,expense,500000,Ăn uống,Cơm trưa
+20/1/2026,income,10000000,Lương,Lương tháng 1
+25/2/2026,expense,1500000,Giao thông,Xăng xe
+10/3/2026,expense,2000000,Mua sắm,Quần áo</pre>
+                        </div>
+
+                        <div class="d-flex gap-2">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-upload"></i> Nhập giao dịch
+                            </button>
+                            <a href="{% url 'transactions' %}" class="btn btn-secondary">
+                                <i class="fas fa-times"></i> Hủy
+                            </a>
+                        </div>
+                    </form>
+
+                    {% if form.non_field_errors %}
+                        <div class="alert alert-danger mt-3">
+                            {{ form.non_field_errors }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">📋 Hướng dẫn chi tiết</h5>
+                </div>
+                <div class="card-body">
+                    <h6>Định dạng dữ liệu:</h6>
+                    <ul>
+                        <li><strong>Ngày:</strong> dd/mm/yyyy (ví dụ: 15/1/2026)</li>
+                        <li><strong>Loại:</strong> income (thu nhập) hoặc expense (chi tiêu)</li>
+                        <li><strong>Số tiền:</strong> Số nguyên dương (ví dụ: 500000)</li>
+                        <li><strong>Danh mục:</strong> Tên danh mục (sẽ tự động tạo nếu chưa có)</li>
+                        <li><strong>Mô tả:</strong> Mô tả giao dịch</li>
+                    </ul>
+
+                    <h6 class="mt-3">Ví dụ:</h6>
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr>
+                                <th>Ngày</th>
+                                <th>Loại</th>
+                                <th>Số tiền</th>
+                                <th>Danh mục</th>
+                                <th>Mô tả</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>15/1/2026</td>
+                                <td>expense</td>
+                                <td>500000</td>
+                                <td>Ăn uống</td>
+                                <td>Cơm trưa</td>
+                            </tr>
+                            <tr>
+                                <td>20/1/2026</td>
+                                <td>income</td>
+                                <td>10000000</td>
+                                <td>Lương</td>
+                                <td>Lương tháng 1</td>
+                            </tr>
+                            <tr>
+                                <td>25/2/2026</td>
+                                <td>expense</td>
+                                <td>1500000</td>
+                                <td>Giao thông</td>
+                                <td>Xăng xe</td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <div class="alert alert-warning mt-3">
+                        <strong>⚠️ Lưu ý:</strong>
+                        <ul class="mb-0">
+                            <li>Mỗi dòng phải có đủ 5 trường, cách nhau bằng dấu phẩy</li>
+                            <li>Ngày phải theo định dạng dd/mm/yyyy</li>
+                            <li>Loại phải là "income" hoặc "expense"</li>
+                            <li>Số tiền phải là số dương</li>
+                            <li>Danh mục sẽ tự động tạo nếu chưa có</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    pre {
+        background-color: #f5f5f5;
+        padding: 10px;
+        border-radius: 4px;
+        overflow-x: auto;
+    }
+</style>
+{% endblock %}

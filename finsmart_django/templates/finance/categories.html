@@ -1,0 +1,113 @@
+{% extends 'finance/base.html' %}
+{% block title %}Danh mục{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div>
+    <h2><i class="bi bi-tags-fill text-primary me-2"></i>Danh mục</h2>
+    <p>Quản lý danh mục thu chi</p>
+  </div>
+  <a href="{% url 'category_add' %}" class="btn btn-primary"><i class="bi bi-plus-lg me-1"></i>Thêm danh mục</a>
+</div>
+
+{% if user_cats %}
+<div class="card mb-4">
+  <div class="card-header bg-white fw-semibold py-3 px-4">
+    <i class="bi bi-person-fill text-primary me-1"></i>Danh mục của bạn ({{ user_cats.count }})
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for cat in user_cats %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="p-3 rounded-3 border d-flex justify-content-between align-items-center" style="background:{{ cat.color|default:'#6B7280' }}18">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-2 d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:{{ cat.color|default:'#6B7280' }}">
+              <i class="bi bi-tag-fill text-white small"></i>
+            </div>
+            <div>
+              <div class="fw-semibold small">{{ cat.name }}</div>
+              <div style="font-size:11px;color:#64748b">{{ cat.type_display }}</div>
+            </div>
+          </div>
+          <div class="d-flex gap-1">
+            <a href="{% url 'category_edit' cat.pk %}" class="btn btn-xs btn-outline-secondary" style="padding:2px 6px" title="Sửa"><i class="bi bi-pencil" style="font-size:11px"></i></a>
+            <button type="button"
+              class="btn btn-xs btn-outline-danger"
+              style="padding:2px 6px"
+              title="Xóa"
+              onclick="confirmDelete('{{ cat.pk }}', '{{ cat.name|escapejs }}')"
+            ><i class="bi bi-trash" style="font-size:11px"></i></button>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<div class="card">
+  <div class="card-header bg-white fw-semibold py-3 px-4">
+    <i class="bi bi-grid-fill text-secondary me-1"></i>Danh mục mặc định ({{ default_cats.count }})
+  </div>
+  <div class="card-body">
+    <div class="row g-3">
+      {% for cat in default_cats %}
+      <div class="col-6 col-md-4 col-lg-3">
+        <div class="p-3 rounded-3 border d-flex justify-content-between align-items-center" style="background:{{ cat.color|default:'#6B7280' }}18">
+          <div class="d-flex align-items-center gap-2">
+            <div class="rounded-2 d-flex align-items-center justify-content-center" style="width:36px;height:36px;background:{{ cat.color|default:'#6B7280' }}">
+              <i class="bi bi-tag-fill text-white small"></i>
+            </div>
+            <div>
+              <div class="fw-semibold small">{{ cat.name }}</div>
+              <div style="font-size:11px;color:#64748b">{{ cat.type_display }}</div>
+            </div>
+          </div>
+          <button type="button"
+            class="btn btn-xs btn-outline-danger"
+            style="padding:2px 6px"
+            title="Xóa danh mục mặc định"
+            onclick="confirmDelete('{{ cat.pk }}', '{{ cat.name|escapejs }}', true)"
+          ><i class="bi bi-trash" style="font-size:11px"></i></button>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+
+<!-- Modal xác nhận xóa -->
+<div class="modal fade" id="deleteModal" tabindex="-1">
+  <div class="modal-dialog modal-dialog-centered">
+    <div class="modal-content border-0 shadow">
+      <div class="modal-header border-0 pb-0">
+        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Xác nhận xóa</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body">
+        <p id="deleteMsg" class="mb-1"></p>
+        <p id="deleteWarn" class="text-warning small mb-0" style="display:none">
+          <i class="bi bi-info-circle me-1"></i>Các giao dịch dùng danh mục này sẽ không còn danh mục (không bị mất giao dịch).
+        </p>
+      </div>
+      <div class="modal-footer border-0 pt-0">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Hủy</button>
+        <form id="deleteForm" method="post">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-danger"><i class="bi bi-trash me-1"></i>Xóa</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function confirmDelete(pk, name, isDefault) {
+  document.getElementById('deleteMsg').textContent = 'Bạn có chắc muốn xóa danh mục "' + name + '"?';
+  var warn = document.getElementById('deleteWarn');
+  warn.style.display = isDefault ? 'block' : 'none';
+  document.getElementById('deleteForm').action = '/categories/' + pk + '/delete/';
+  new bootstrap.Modal(document.getElementById('deleteModal')).show();
+}
+</script>
+{% endblock %}

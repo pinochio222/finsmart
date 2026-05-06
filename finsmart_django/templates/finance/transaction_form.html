@@ -1,0 +1,51 @@
+{% extends 'finance/base.html' %}
+{% load crispy_forms_tags %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <h2>{{ title }}</h2>
+            
+            <form method="post" class="mt-4">
+                {% csrf_token %}
+                
+                <!-- Form cơ bản -->
+                {{ form|crispy }}
+                
+                <!-- ⭐ LIÊN KẾT 3: Liên Kết Với Mục Tiêu -->
+                {% if goals %}
+                <div class="form-group mb-3">
+                    <label for="goal_id" class="form-label">
+                        <strong>🎯 Liên Kết Với Mục Tiêu (Tùy Chọn)</strong>
+                    </label>
+                    <select name="goal_id" id="goal_id" class="form-select">
+                        <option value="">-- Không liên kết --</option>
+                        {% for goal in goals %}
+                            <option value="{{ goal.id }}">
+                                {{ goal.name }} ({{ goal.percentage }}% - {{ goal.current_amount|floatformat:0 }}/{{ goal.target_amount|floatformat:0 }}đ)
+                            </option>
+                        {% endfor %}
+                    </select>
+                    <small class="form-text text-muted">
+                        Liên kết giao dịch này với mục tiêu tiết kiệm để tự động cập nhật tiến độ
+                    </small>
+                </div>
+                {% endif %}
+                
+                <!-- Nút -->
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Lưu
+                    </button>
+                    <a href="{% url 'transactions' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Hủy
+                    </a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

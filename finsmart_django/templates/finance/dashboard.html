@@ -1,0 +1,252 @@
+{% extends 'finance/base.html' %}
+{% load humanize %}
+{% load money %}
+{% block title %}Tổng quan{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div>
+    <h2><i class="bi bi-grid-1x2-fill text-primary me-2"></i>Tổng quan</h2>
+    <p>Tháng {{ month }}/{{ year }} — Xin chào, {{ user.first_name|default:user.username }}!</p>
+  </div>
+  <form class="d-flex gap-2" method="get">
+    <select name="month" class="form-select form-select-sm" style="width:120px">
+      <option value="1" {% if month == 1 %}selected{% endif %}>Tháng 1</option>
+      <option value="2" {% if month == 2 %}selected{% endif %}>Tháng 2</option>
+      <option value="3" {% if month == 3 %}selected{% endif %}>Tháng 3</option>
+      <option value="4" {% if month == 4 %}selected{% endif %}>Tháng 4</option>
+      <option value="5" {% if month == 5 %}selected{% endif %}>Tháng 5</option>
+      <option value="6" {% if month == 6 %}selected{% endif %}>Tháng 6</option>
+      <option value="7" {% if month == 7 %}selected{% endif %}>Tháng 7</option>
+      <option value="8" {% if month == 8 %}selected{% endif %}>Tháng 8</option>
+      <option value="9" {% if month == 9 %}selected{% endif %}>Tháng 9</option>
+      <option value="10" {% if month == 10 %}selected{% endif %}>Tháng 10</option>
+      <option value="11" {% if month == 11 %}selected{% endif %}>Tháng 11</option>
+      <option value="12" {% if month == 12 %}selected{% endif %}>Tháng 12</option>
+    </select>
+    <select name="year" class="form-select form-select-sm" style="width:100px">
+      <option value="2023" {% if year == 2023 %}selected{% endif %}>2023</option>
+      <option value="2024" {% if year == 2024 %}selected{% endif %}>2024</option>
+      <option value="2025" {% if year == 2025 %}selected{% endif %}>2025</option>
+      <option value="2026" {% if year == 2026 %}selected{% endif %}>2026</option>
+    </select>
+    <button type="submit" class="btn btn-sm btn-outline-primary">Lọc</button>
+  </form>
+</div>
+
+<!-- Summary cards -->
+<div class="row g-3 mb-4">
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#dcfce7"><i class="bi bi-arrow-down-circle-fill" style="color:#16a34a"></i></div>
+        <div>
+          <div class="text-muted small">Tổng thu</div>
+          <div class="fw-bold income-text">{% money total_income %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#fee2e2"><i class="bi bi-arrow-up-circle-fill" style="color:#dc2626"></i></div>
+        <div>
+          <div class="text-muted small">Tổng chi</div>
+          <div class="fw-bold expense-text">{% money total_expense %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#dbeafe"><i class="bi bi-wallet2" style="color:#1d4ed8"></i></div>
+        <div>
+          <div class="text-muted small">Số dư tháng</div>
+          <div class="fw-bold {% if balance >= 0 %}income-text{% else %}expense-text{% endif %}">{% money balance %}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3">
+    <div class="card stat-card p-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="stat-icon" style="background:#f0fdf4"><i class="bi bi-piggy-bank-fill" style="color:#15803d"></i></div>
+        <div>
+          <div class="text-muted small">Tỷ lệ tiết kiệm</div>
+          <div class="fw-bold" style="color:#15803d">{{ savings_rate }}%</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3 mb-4">
+  <!-- Monthly trend chart -->
+  <div class="col-12 col-lg-7">
+    <div class="card">
+      <div class="card-header bg-white fw-semibold py-3 px-4">
+        <i class="bi bi-bar-chart-fill text-primary me-2"></i>Xu hướng thu chi 6 tháng gần nhất
+      </div>
+      <div class="card-body p-3">
+        <canvas id="trendChart" height="220"></canvas>
+      </div>
+    </div>
+  </div>
+  <!-- Category pie chart -->
+  <div class="col-12 col-lg-5">
+    <div class="card">
+      <div class="card-header bg-white fw-semibold py-3 px-4">
+        <i class="bi bi-pie-chart-fill text-primary me-2"></i>Chi tiêu theo danh mục
+      </div>
+      <div class="card-body p-3">
+        {% if chart_data != '[]' %}
+          <canvas id="catChart" height="220"></canvas>
+        {% else %}
+          <div class="text-center text-muted py-5"><i class="bi bi-info-circle fs-3"></i><p class="mt-2">Chưa có dữ liệu chi tiêu</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row g-3">
+  <!-- Budget alerts -->
+  <div class="col-12 col-md-6">
+    <div class="card">
+      <div class="card-header bg-white fw-semibold py-3 px-4 d-flex justify-content-between">
+        <span><i class="bi bi-exclamation-triangle-fill text-warning me-2"></i>Cảnh báo ngân sách</span>
+        <a href="{% url 'budgets' %}" class="text-muted small text-decoration-none">Xem tất cả</a>
+      </div>
+      <div class="card-body p-3">
+        {% if budget_alerts %}
+          {% for b in budget_alerts %}
+          <div class="mb-3">
+            <div class="d-flex justify-content-between mb-1">
+              <span class="small fw-medium">{{ b.category.name|default:"Tổng ngân sách" }}</span>
+              <span class="badge bg-{{ b.status_color }}">{{ b.status_display }}</span>
+            </div>
+            <div class="progress mb-1">
+              <div class="progress-bar bg-{{ b.status_color }}" style="width:{{ b.percentage }}%"></div>
+            </div>
+            <div class="d-flex justify-content-between" style="font-size:11px;color:#64748b">
+              <span>{% money b.spent %} / {% money b.amount %}</span>
+              <span>{{ b.percentage }}%</span>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center text-muted py-3"><i class="bi bi-check-circle-fill text-success fs-3"></i><p class="mt-2 small">Tất cả ngân sách trong giới hạn!</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Recent transactions -->
+  <div class="col-12 col-md-6">
+    <div class="card">
+      <div class="card-header bg-white fw-semibold py-3 px-4 d-flex justify-content-between">
+        <span><i class="bi bi-clock-history text-primary me-2"></i>Giao dịch gần đây</span>
+        <a href="{% url 'transactions' %}" class="text-muted small text-decoration-none">Xem tất cả</a>
+      </div>
+      <div class="card-body p-0">
+        {% if recent_txs %}
+        <ul class="list-group list-group-flush">
+          {% for tx in recent_txs %}
+          <li class="list-group-item px-4 py-3 d-flex justify-content-between align-items-center">
+            <div>
+              <div class="fw-medium small">{{ tx.description }}</div>
+              <div class="text-muted" style="font-size:11px">{{ tx.date|date:"d/m/Y" }} · {{ tx.category.name|default:"Khác" }}</div>
+            </div>
+            <div class="{% if tx.type == 'income' %}income-text{% else %}expense-text{% endif %} fw-semibold small">
+              {% if tx.type == 'income' %}+{% else %}-{% endif %}{% money tx.amount %}
+            </div>
+          </li>
+          {% endfor %}
+        </ul>
+        {% else %}
+          <div class="text-center text-muted py-4"><i class="bi bi-inbox fs-3"></i><p class="mt-2 small">Chưa có giao dịch</p></div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Smart suggestions -->
+{% if ai_suggestions %}
+<div class="row g-3 mt-1">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header bg-white fw-semibold py-3 px-4 d-flex justify-content-between align-items-center">
+        <div>
+          <i class="bi bi-lightbulb-fill text-warning me-2"></i>Gợi ý thông minh
+        </div>
+        <form method="post" action="{% url 'refresh_suggestions' %}" style="display:inline;">
+          {% csrf_token %}
+          <button type="submit" class="btn btn-sm btn-outline-primary" title="Làm mới gợi ý">
+            <i class="bi bi-arrow-clockwise me-1"></i>Làm mới
+          </button>
+        </form>
+      </div>
+      <div class="card-body">
+        <div class="row g-3">
+          {% for sug in ai_suggestions %}
+          <div class="col-12 col-md-4">
+            <div class="p-3 rounded-3 border" style="background:#f8fafc">
+              <div class="d-flex justify-content-between mb-2">
+                <span class="fw-semibold small">{{ sug.title }}</span>
+                <span class="badge bg-{{ sug.priority_color }}">{{ sug.get_priority_display }}</span>
+              </div>
+              <p class="text-muted small mb-0">{{ sug.message }}</p>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+const trendLabels = {{ trend_labels|safe }};
+const trendIncome = {{ trend_income|safe }};
+const trendExpense = {{ trend_expense|safe }};
+new Chart(document.getElementById('trendChart'), {
+  type: 'bar',
+  data: {
+    labels: trendLabels,
+    datasets: [
+      { label: 'Thu nhập', data: trendIncome, backgroundColor: '#16a34a', borderRadius: 4 },
+      { label: 'Chi tiêu', data: trendExpense, backgroundColor: '#dc2626', borderRadius: 4 },
+    ]
+  },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: { legend: { position: 'top' } },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: v => (v/1000000).toFixed(1) + 'tr' } }
+    }
+  }
+});
+
+{% if chart_data != '[]' %}
+const catLabels = {{ chart_labels|safe }};
+const catData = {{ chart_data|safe }};
+const catColors = {{ chart_colors|safe }};
+new Chart(document.getElementById('catChart'), {
+  type: 'doughnut',
+  data: { labels: catLabels, datasets: [{ data: catData, backgroundColor: catColors, borderWidth: 2 }] },
+  options: {
+    responsive: true, maintainAspectRatio: false,
+    plugins: {
+      legend: { position: 'right', labels: { font: { size: 11 } } },
+      tooltip: { callbacks: { label: ctx => ctx.label + ': ' + Number(ctx.raw).toLocaleString('en-US') + 'đ' } }
+    }
+  }
+});
+{% endif %}
+</script>
+{% endblock %}

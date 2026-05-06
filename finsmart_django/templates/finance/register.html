@@ -1,0 +1,212 @@
+{% extends 'finance/base.html' %}
+{% block title %}Đăng ký{% endblock %}
+{% block auth_content %}
+<div class="auth-wrapper">
+  <div class="auth-card">
+    <div class="text-center mb-4">
+      <div class="brand-logo">F</div>
+      <h2 class="fw-bold mb-1">Tạo tài khoản</h2>
+      <p class="text-muted small">Bắt đầu hành trình quản lý tài chính</p>
+    </div>
+
+    {% if form.non_field_errors %}
+      <div class="alert alert-danger py-2 small mb-3">
+        {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+      </div>
+    {% endif %}
+
+    <form method="post" novalidate id="registerForm">
+      {% csrf_token %}
+
+      <div class="mb-3">
+        <label class="form-label fw-medium">Họ tên <span class="text-danger">*</span></label>
+        <input
+          type="text"
+          name="first_name"
+          value="{{ form.first_name.value|default:'' }}"
+          class="form-control {% if form.first_name.errors %}is-invalid{% endif %}"
+          placeholder="Nguyễn Văn A"
+          autocomplete="name"
+          required
+        >
+        {% if form.first_name.errors %}
+          <div class="invalid-feedback">{{ form.first_name.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-medium">Email <span class="text-danger">*</span></label>
+        <input
+          type="email"
+          name="email"
+          value="{{ form.email.value|default:'' }}"
+          class="form-control {% if form.email.errors %}is-invalid{% endif %}"
+          placeholder="sv@example.com"
+          autocomplete="email"
+          required
+        >
+        {% if form.email.errors %}
+          <div class="invalid-feedback">{{ form.email.errors.0 }}</div>
+        {% endif %}
+      </div>
+
+      <div class="mb-3">
+        <label class="form-label fw-medium">Mật khẩu <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <input
+            type="password"
+            name="password1"
+            id="id_password1"
+            class="form-control {% if form.password1.errors %}is-invalid{% endif %}"
+            placeholder="Tối thiểu 8 ký tự"
+            autocomplete="new-password"
+            required
+          >
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('id_password1', this)" tabindex="-1">
+            <i class="bi bi-eye"></i>
+          </button>
+          {% if form.password1.errors %}
+            <div class="invalid-feedback d-block">{{ form.password1.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <!-- Password strength bar -->
+        <div class="mt-2" id="strengthContainer" style="display:none">
+          <div class="progress" style="height:5px">
+            <div class="progress-bar" id="strengthBar" role="progressbar" style="width:0%"></div>
+          </div>
+          <small id="strengthText" class="text-muted"></small>
+        </div>
+        <!-- Requirements checklist -->
+        <ul class="list-unstyled mt-2 mb-0 small" id="pwdReqs">
+          <li id="req-len" class="text-muted"><i class="bi bi-circle me-1"></i>Ít nhất 8 ký tự</li>
+          <li id="req-alpha" class="text-muted"><i class="bi bi-circle me-1"></i>Có chữ cái (không chỉ số)</li>
+          <li id="req-variety" class="text-muted"><i class="bi bi-circle me-1"></i>Không quá đơn giản</li>
+        </ul>
+      </div>
+
+      <div class="mb-4">
+        <label class="form-label fw-medium">Xác nhận mật khẩu <span class="text-danger">*</span></label>
+        <div class="input-group">
+          <input
+            type="password"
+            name="password2"
+            id="id_password2"
+            class="form-control {% if form.password2.errors %}is-invalid{% endif %}"
+            placeholder="Nhập lại mật khẩu"
+            autocomplete="new-password"
+            required
+          >
+          <button class="btn btn-outline-secondary" type="button" onclick="togglePassword('id_password2', this)" tabindex="-1">
+            <i class="bi bi-eye"></i>
+          </button>
+          {% if form.password2.errors %}
+            <div class="invalid-feedback d-block">{{ form.password2.errors.0 }}</div>
+          {% endif %}
+        </div>
+        <div id="matchMsg" class="small mt-1" style="display:none"></div>
+      </div>
+
+      <button type="submit" class="btn btn-primary w-100 py-2 fw-semibold" id="submitBtn">
+        Tạo tài khoản
+      </button>
+    </form>
+
+    <p class="text-center text-muted small mt-4">
+      Đã có tài khoản?
+      <a href="{% url 'login' %}" class="text-decoration-none fw-semibold" style="color:var(--primary)">Đăng nhập</a>
+    </p>
+  </div>
+</div>
+
+<script>
+const COMMON_PASSWORDS = new Set([
+  '123456','123456789','12345678','12345','1234567','1234567890',
+  '123123','111111','000000','password','password1','qwerty',
+  'abc123','iloveyou','admin','123321','654321','666666',
+  '888888','12341234','1q2w3e4r','zxcvbnm','asdfgh',
+  'monkey','dragon','master','superman','batman',
+  '1234','0000','9999','abcd1234','letmein','welcome'
+]);
+
+function togglePassword(id, btn) {
+  const input = document.getElementById(id);
+  const isText = input.type === 'text';
+  input.type = isText ? 'password' : 'text';
+  btn.innerHTML = isText ? '<i class="bi bi-eye"></i>' : '<i class="bi bi-eye-slash"></i>';
+}
+
+function updateReq(id, ok) {
+  const el = document.getElementById(id);
+  if (ok) {
+    el.className = 'text-success';
+    el.querySelector('i').className = 'bi bi-check-circle-fill me-1';
+  } else {
+    el.className = 'text-muted';
+    el.querySelector('i').className = 'bi bi-circle me-1';
+  }
+}
+
+function getStrength(pwd) {
+  if (!pwd) return 0;
+  let score = 0;
+  if (pwd.length >= 8) score++;
+  if (pwd.length >= 12) score++;
+  if (/[a-zA-Z]/.test(pwd) && /[0-9]/.test(pwd)) score++;
+  if (/[^a-zA-Z0-9]/.test(pwd)) score++;
+  if (COMMON_PASSWORDS.has(pwd.toLowerCase())) score = Math.min(score, 1);
+  return score;
+}
+
+const pwd1 = document.getElementById('id_password1');
+const pwd2 = document.getElementById('id_password2');
+
+pwd1.addEventListener('input', function() {
+  const val = this.value;
+  const container = document.getElementById('strengthContainer');
+  const bar = document.getElementById('strengthBar');
+  const text = document.getElementById('strengthText');
+
+  if (val.length > 0) {
+    container.style.display = 'block';
+    const strength = getStrength(val);
+    const levels = [
+      {pct: 25, cls: 'bg-danger', label: 'Rất yếu'},
+      {pct: 50, cls: 'bg-warning', label: 'Yếu'},
+      {pct: 75, cls: 'bg-info', label: 'Trung bình'},
+      {pct: 100, cls: 'bg-success', label: 'Mạnh'},
+    ];
+    const lvl = levels[Math.max(0, Math.min(strength, 3))];
+    bar.style.width = lvl.pct + '%';
+    bar.className = 'progress-bar ' + lvl.cls;
+    text.textContent = lvl.label;
+    text.className = 'small ' + lvl.cls.replace('bg-', 'text-');
+  } else {
+    container.style.display = 'none';
+  }
+
+  updateReq('req-len', val.length >= 8);
+  updateReq('req-alpha', /[a-zA-Z]/.test(val));
+  updateReq('req-variety', val.length >= 8 && new Set(val).size >= 4 && !COMMON_PASSWORDS.has(val.toLowerCase()));
+
+  checkMatch();
+});
+
+pwd2.addEventListener('input', checkMatch);
+
+function checkMatch() {
+  const msg = document.getElementById('matchMsg');
+  const v1 = pwd1.value, v2 = pwd2.value;
+  if (!v2) { msg.style.display = 'none'; return; }
+  msg.style.display = 'block';
+  if (v1 === v2) {
+    msg.innerHTML = '<span class="text-success"><i class="bi bi-check-circle-fill me-1"></i>Mật khẩu khớp</span>';
+    pwd2.classList.remove('is-invalid');
+    pwd2.classList.add('is-valid');
+  } else {
+    msg.innerHTML = '<span class="text-danger"><i class="bi bi-x-circle-fill me-1"></i>Mật khẩu chưa khớp</span>';
+    pwd2.classList.remove('is-valid');
+    pwd2.classList.add('is-invalid');
+  }
+}
+</script>
+{% endblock auth_content %}

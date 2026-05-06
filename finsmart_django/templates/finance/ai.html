@@ -1,0 +1,324 @@
+{% extends 'finance/base.html' %}
+{% block title %}Trợ lý tài chính{% endblock %}
+{% block content %}
+<div class="page-header d-flex justify-content-between align-items-start">
+  <div>
+    <h2><i class="bi bi-robot text-primary me-2"></i>Trợ lý tài chính</h2>
+    <p>Gợi ý thông minh và chatbot tài chính</p>
+  </div>
+  <div class="d-flex gap-2">
+    <form method="post" action="{% url 'ai_refresh' %}">{% csrf_token %}
+      <button type="submit" class="btn btn-outline-primary btn-sm"><i class="bi bi-arrow-clockwise me-1"></i>Làm mới</button>
+    </form>
+    <form method="post" action="{% url 'ai_clear_chat' %}">{% csrf_token %}
+      <button type="submit" class="btn btn-outline-secondary btn-sm"><i class="bi bi-eraser me-1"></i>Chat mới</button>
+    </form>
+  </div>
+</div>
+
+<div class="row g-4">
+  <!-- Left: Smart Suggestions -->
+  <div class="col-12 col-lg-5">
+    <div class="card h-100">
+      <div class="card-header bg-white fw-semibold py-3 px-4">
+        <i class="bi bi-lightbulb-fill text-warning me-2"></i>Gợi ý thông minh
+      </div>
+      <div class="card-body p-3">
+        {% if suggestions %}
+          {% for sug in suggestions %}
+          <div class="p-3 rounded-3 border mb-3" style="background:#f8fafc">
+            <div class="d-flex justify-content-between mb-2">
+              <span class="fw-semibold small">{{ sug.title }}</span>
+              <span class="badge bg-{{ sug.priority_color }}">{{ sug.get_priority_display }}</span>
+            </div>
+            <p class="text-muted small mb-1">{{ sug.message }}</p>
+            <div class="text-muted" style="font-size:10px">{{ sug.created_at|date:"d/m/Y H:i" }}</div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div class="text-center text-muted py-5">
+            <i class="bi bi-lightbulb fs-1"></i>
+            <p class="mt-2 small">Chưa có gợi ý. Thêm giao dịch để AI phân tích!</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Right: Chatbot -->
+  <div class="col-12 col-lg-7">
+    <div class="card h-100 d-flex flex-column">
+      <div class="card-header bg-white fw-semibold py-3 px-4 d-flex align-items-center gap-2">
+        <div style="width:10px;height:10px;background:#22c55e;border-radius:50%"></div>
+        Chatbot AI
+        <span class="ms-auto text-muted fw-normal" style="font-size:12px">Cập nhật: <span id="lastUpdated">{{ last_updated|date:"d/m/Y H:i" }}</span></span>
+      </div>
+      <div class="row g-0 flex-grow-1" style="min-height:520px">
+        <div class="col-12 col-xl-4 border-end bg-light">
+          <div class="p-3 h-100" style="overflow-y:auto;max-height:520px">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <span class="fw-semibold small"><i class="bi bi-clock-history me-1"></i>Lịch sử chat cũ</span>
+            </div>
+            <div id="chatHistoryMenu" class="list-group list-group-flush">
+              {% if chat_history_menu %}
+                {% for item in chat_history_menu %}
+                <div class="list-group-item list-group-item-action px-2 py-2 {% if item.is_active %}active{% endif %}" style="position: relative; padding-right: 35px !important;">
+                  <div onclick="openSession('{{ item.session_key }}')" style="cursor: pointer;">
+                    <div class="small fw-semibold" style="max-width: 100%; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.4;">
+                      {{ item.preview }}
+                    </div>
+                    <div class="{% if item.is_active %}text-white-50{% else %}text-muted{% endif %} mt-1" style="font-size:11px">
+                      {{ item.created_at|date:"d/m/Y H:i" }}
+                    </div>
+                  </div>
+                  <form method="post" action="{% url 'ai_delete_session' %}" class="m-0" onsubmit="return confirm('Xóa lịch sử chat này?')" style="position: absolute; top: 8px; right: 8px;">
+                    {% csrf_token %}
+                    <input type="hidden" name="session_key" value="{{ item.session_key }}">
+                    <button type="submit" class="btn btn-sm p-0 border-0 bg-transparent {% if item.is_active %}text-white-50{% else %}text-danger{% endif %}" title="Xóa" style="font-size: 16px; line-height: 1; opacity: 0.7;">
+                      <i class="bi bi-trash"></i>
+                    </button>
+                  </form>
+                </div>
+                {% endfor %}
+              {% else %}
+                <div id="chatHistoryEmpty" class="text-muted small px-2 py-3">Chưa có lịch sử chat.</div>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+        <div class="col-12 col-xl-8 d-flex flex-column">
+          <div class="chat-container flex-grow-1" id="chatContainer">
+            {% if chat_messages %}
+              {% for msg in chat_messages %}
+              <div id="msg-{{ msg.id }}" class="d-flex {% if msg.role == 'user' %}justify-content-end{% endif %} mb-2">
+                <div>
+                  <div class="chat-bubble {{ msg.role }}">{{ msg.content }}</div>
+                  <div class="text-muted mt-1 {% if msg.role == 'user' %}text-end{% endif %}" style="font-size:10px">{{ msg.created_at|date:"d/m/Y H:i" }}</div>
+                </div>
+              </div>
+              {% endfor %}
+            {% else %}
+              <div class="text-center text-muted py-5">
+                <i class="bi bi-chat-dots fs-2"></i>
+                <p class="mt-2 small">Hỏi tôi bất cứ điều gì về tài chính của bạn!</p>
+              </div>
+            {% endif %}
+            <div id="typingIndicator" class="d-none">
+              <div class="chat-bubble assistant d-inline-block">
+                <span class="spinner-border spinner-border-sm" role="status"></span> Đang trả lời...
+              </div>
+            </div>
+          </div>
+          <div class="chat-input-area">
+            <div class="d-flex gap-2">
+              <input type="text" id="chatInput" class="form-control" placeholder="Hỏi về tài chính của bạn...">
+              <button id="sendBtn" class="btn btn-primary px-4" onclick="sendMessage()">
+                <i class="bi bi-send-fill"></i>
+              </button>
+            </div>
+            <div class="d-flex gap-2 mt-2 flex-wrap">
+              <button class="btn btn-xs btn-outline-secondary" style="font-size:11px;padding:2px 8px" onclick="quickAsk('Tình hình tài chính tháng này của tôi thế nào?')">Tình hình tháng này</button>
+              <button class="btn btn-xs btn-outline-secondary" style="font-size:11px;padding:2px 8px" onclick="quickAsk('Tôi nên tiết kiệm như thế nào?')">Lời khuyên tiết kiệm</button>
+              <button class="btn btn-xs btn-outline-secondary" style="font-size:11px;padding:2px 8px" onclick="quickAsk('Phân tích chi tiêu của tôi')">Phân tích chi tiêu</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const csrfToken = '{{ csrf_token }}';
+let activeSessionKey = '{{ active_session }}';
+
+function addBubble(role, text, timeText = null, messageId = null) {
+  const container = document.getElementById('chatContainer');
+  const wrapper = document.createElement('div');
+  wrapper.className = `d-flex ${role === 'user' ? 'justify-content-end' : ''} mb-2`;
+  if (messageId) {
+    wrapper.id = `msg-${messageId}`;
+  }
+
+  const box = document.createElement('div');
+  const bubble = document.createElement('div');
+  bubble.className = `chat-bubble ${role}`;
+  bubble.textContent = text;
+  box.appendChild(bubble);
+
+  const time = document.createElement('div');
+  time.className = `text-muted mt-1 ${role === 'user' ? 'text-end' : ''}`;
+  time.style.fontSize = '10px';
+  time.textContent = timeText || new Date().toLocaleString('vi-VN', { hour12: false });
+  box.appendChild(time);
+
+  wrapper.appendChild(box);
+  // Remove empty state
+  const emptyState = container.querySelector('.text-center');
+  if (emptyState) emptyState.remove();
+  container.insertBefore(wrapper, document.getElementById('typingIndicator'));
+  container.scrollTop = container.scrollHeight;
+  return { wrapper, time };
+}
+
+function openSession(sessionKey) {
+  const url = new URL(window.location.href);
+  url.searchParams.set('session', sessionKey);
+  url.searchParams.delete('new');
+  window.location.href = url.toString();
+}
+
+function setActiveHistoryItem(sessionKey) {
+  document.querySelectorAll('#chatHistoryMenu [data-session-key]').forEach(item => {
+    item.classList.toggle('active', item.dataset.sessionKey === sessionKey);
+  });
+}
+
+function syncSessionUrl(sessionKey) {
+  const url = new URL(window.location.href);
+  if (sessionKey) {
+    url.searchParams.set('session', sessionKey);
+    url.searchParams.delete('new');
+  } else {
+    url.searchParams.delete('session');
+    url.searchParams.set('new', '1');
+  }
+  window.history.replaceState({}, '', url.toString());
+}
+
+function addHistoryItem(sessionKey, text, timeText = null) {
+  const menu = document.getElementById('chatHistoryMenu');
+  if (!menu || !sessionKey) return;
+  const empty = document.getElementById('chatHistoryEmpty');
+  if (empty) empty.remove();
+
+  const existing = menu.querySelector(`[data-session-key="${sessionKey}"]`);
+  if (existing) {
+    const titleEl = existing.querySelector('.small.fw-semibold');
+    const timeEl = existing.querySelector('.text-muted');
+    titleEl.textContent = text.length > 44 ? `${text.slice(0, 44)}...` : text;
+    timeEl.textContent = timeText || formatDateToMinute(new Date());
+    menu.prepend(existing);
+    activeSessionKey = sessionKey;
+    setActiveHistoryItem(sessionKey);
+    syncSessionUrl(sessionKey);
+    return;
+  }
+
+  const btn = document.createElement('button');
+  btn.type = 'button';
+  btn.className = 'list-group-item list-group-item-action px-2 py-2';
+  btn.dataset.sessionKey = sessionKey;
+  btn.onclick = () => openSession(sessionKey);
+
+  const title = document.createElement('div');
+  title.className = 'small fw-semibold text-truncate';
+  title.textContent = text.length > 44 ? `${text.slice(0, 44)}...` : text;
+
+  const sub = document.createElement('div');
+  sub.className = 'text-muted';
+  sub.style.fontSize = '11px';
+  sub.textContent = timeText || formatDateToMinute(new Date());
+
+  btn.appendChild(title);
+  btn.appendChild(sub);
+  menu.prepend(btn);
+
+  while (menu.children.length > 30) {
+    menu.removeChild(menu.lastElementChild);
+  }
+
+  activeSessionKey = sessionKey;
+  setActiveHistoryItem(sessionKey);
+  syncSessionUrl(sessionKey);
+}
+
+function formatDateToMinute(dateObj) {
+  return dateObj.toLocaleString('vi-VN', {
+    hour12: false,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function setLastUpdated(ts = null) {
+  const el = document.getElementById('lastUpdated');
+  if (!el) return;
+  el.textContent = ts || formatDateToMinute(new Date());
+}
+
+async function sendMessage() {
+  const input = document.getElementById('chatInput');
+  const msg = input.value.trim();
+  if (!msg) return;
+  input.value = '';
+  input.disabled = true;
+  document.getElementById('sendBtn').disabled = true;
+
+  const pendingUser = addBubble('user', msg);
+  document.getElementById('typingIndicator').classList.remove('d-none');
+  document.getElementById('chatContainer').scrollTop = 9999;
+
+  try {
+    const res = await fetch('{% url "ai_chat" %}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'X-CSRFToken': csrfToken },
+      body: JSON.stringify({ message: msg, session_key: activeSessionKey || '' })
+    });
+    const data = await res.json();
+    document.getElementById('typingIndicator').classList.add('d-none');
+
+    if (!res.ok) {
+      throw new Error(data.error || 'request_failed');
+    }
+
+    if (data.session_key) {
+      activeSessionKey = data.session_key;
+      setActiveHistoryItem(activeSessionKey);
+      syncSessionUrl(activeSessionKey);
+    }
+
+    if (data.user_id) {
+      pendingUser.wrapper.id = `msg-${data.user_id}`;
+      if (data.user_time) {
+        pendingUser.time.textContent = data.user_time;
+      }
+      addHistoryItem(data.session_key || activeSessionKey, msg, data.user_time || null);
+    }
+
+    addBubble('assistant', data.reply || 'Xin lỗi, có lỗi xảy ra.', data.assistant_time || null, data.id || null);
+    setLastUpdated(data.updated_at || null);
+  } catch (e) {
+    document.getElementById('typingIndicator').classList.add('d-none');
+    addBubble('assistant', 'Không thể kết nối. Vui lòng thử lại.');
+    setLastUpdated();
+  }
+  input.disabled = false;
+  document.getElementById('sendBtn').disabled = false;
+  input.focus();
+}
+
+function quickAsk(text) {
+  document.getElementById('chatInput').value = text;
+  sendMessage();
+}
+
+document.getElementById('chatInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
+});
+
+// Scroll to bottom
+document.getElementById('chatContainer').scrollTop = 9999;
+if (activeSessionKey) {
+  setActiveHistoryItem(activeSessionKey);
+}
+
+// Keep clock indicator fresh even without new messages
+setInterval(() => setLastUpdated(), 60000);
+</script>
+{% endblock %}

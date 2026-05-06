@@ -1,0 +1,206 @@
+{% extends 'finance/base.html' %}
+{% load humanize %}
+{% load money %}
+
+{% block title %}Quản Lý Ngân Sách{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <h2>💰 Quản Lý Ngân Sách</h2>
+        </div>
+        <div class="col-md-4 text-end">
+            <a href="{% url 'budget_add' %}" class="btn btn-primary">
+                <i class="fas fa-plus"></i> Thêm Ngân Sách
+            </a>
+        </div>
+    </div>
+
+    <!-- Lọc tháng/năm -->
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <form method="get" class="row g-2">
+                <div class="col-md-4">
+                    <select name="month" class="form-select" onchange="this.form.submit()">
+                        {% for m, label in months %}
+                            <option value="{{ m }}" {% if m == month %}selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="col-md-4">
+                    <select name="year" class="form-select" onchange="this.form.submit()">
+                        {% for y in years %}
+                            <option value="{{ y }}" {% if y == year %}selected{% endif %}>{{ y }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    {% if budgets %}
+        <div class="row">
+            {% for budget_item in budgets %}
+                {% with budget=budget_item.budget %}
+                <div class="col-md-6 mb-4">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <!-- Tiêu đề -->
+                            <div class="d-flex justify-content-between align-items-start mb-3">
+                                <div>
+                                    <h5 class="card-title">
+                                        {% if budget.category %}
+                                            {{ budget.category.icon }} {{ budget.category.name }}
+                                        {% else %}
+                                            💼 Tổng Ngân Sách
+                                        {% endif %}
+                                    </h5>
+                                </div>
+                                <div class="btn-group" role="group">
+                                    <a href="{% url 'budget_edit' budget.id %}" class="btn btn-sm btn-warning">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{% url 'budget_delete' budget.id %}" class="btn btn-sm btn-danger">
+                                        <i class="fas fa-trash"></i>
+                                    </a>
+                                </div>
+                            </div>
+
+                            <!-- Tiến độ -->
+                            <div class="mb-3">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <span>Sử dụng</span>
+                                    <strong>{{ budget.percentage }}%</strong>
+                                </div>
+                                <div class="progress">
+                                    <div class="progress-bar bg-{{ budget.status_color }}" role="progressbar" 
+                                         style="width: {{ budget.percentage }}%"
+                                         aria-valuenow="{{ budget.percentage }}" 
+                                         aria-valuemin="0" aria-valuemax="100">
+                                    </div>
+                                </div>
+                                <small class="text-muted">
+                                    {% money budget.spent %} / {% money budget.amount %}
+                                </small>
+                            </div>
+
+                            <!-- Trạng thái -->
+                            <div class="mb-3">
+                                <p class="mb-0">
+                                    <strong>Trạng thái:</strong>
+                                    <span class="badge bg-{{ budget.status_color }}">{{ budget.status_display }}</span>
+                                </p>
+                            </div>
+
+                            <!-- ⭐ LIÊN KẾT 2: Transaction ↔ Budget -->
+                            <div class="alert alert-primary mb-3">
+                                <h6 class="alert-heading">📊 Phân Tích Chi Tiêu</h6>
+                                
+                                <!-- Còn lại (chỉ tháng này) -->
+                                <p class="mb-2">
+                                    <strong>Còn lại:</strong> 
+                                    <span class="badge bg-success">{% money budget_item.remaining_budget_current_month %}</span>
+                                </p>
+
+                                <!-- Mỗi ngày -->
+                                <p class="mb-2">
+                                    <strong>Mỗi ngày:</strong> 
+                                    <span class="badge bg-info">{% money budget_item.daily_budget_remaining %}</span>
+                                </p>
+
+                                <!-- Danh mục vượt -->
+                                {% if budget_item.overspend_by_category %}
+                                <p class="mb-0">
+                                    <strong>Danh mục vượt:</strong>
+                                    {% for item in budget_item.overspend_by_category %}
+                                        <br><small class="text-danger">
+                                            • {{ item.category }}: vượt {{ item.overspend|comma_money }}đ
+                                        </small>
+                                    {% endfor %}
+                                </p>
+                                {% endif %}
+                            </div>
+
+                            <!-- So sánh tháng trước -->
+                            {% if budget_item.previous_month_budget %}
+                            <div class="alert alert-secondary mb-0">
+                                <h6 class="alert-heading">📈 So Sánh Tháng Trước</h6>
+                                <p class="mb-1">
+                                    <strong>Ngân sách tháng trước:</strong> 
+                                    {{ budget_item.previous_month_budget.amount|comma_money }}đ
+                                </p>
+                                <p class="mb-1">
+                                    <strong>Thay đổi:</strong>
+                                    {% if budget_item.budget_variance_percentage %}
+                                        {% if budget_item.budget_variance_percentage > 0 %}
+                                            <span class="badge bg-success">
+                                                ↑ {{ budget_item.budget_variance_percentage }}%
+                                            </span>
+                                        {% elif budget_item.budget_variance_percentage < 0 %}
+                                            <span class="badge bg-danger">
+                                                ↓ {{ budget_item.budget_variance_abs }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="badge bg-secondary">
+                                                ➡️ 0%
+                                            </span>
+                                        {% endif %}
+                                    {% endif %}
+                                </p>
+                                <p class="mb-0">
+                                    <strong>Hợp lý:</strong>
+                                    {% if budget_item.is_budget_reasonable %}
+                                        <span class="badge bg-success">✅ Có</span>
+                                    {% else %}
+                                        <span class="badge bg-warning">⚠️ Quá chặt</span>
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endwith %}
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if paginator.num_pages > 1 %}
+        <nav aria-label="Page navigation" class="d-flex justify-content-center mt-4">
+          <ul class="pagination mb-0">
+            {% if budgets.has_previous %}
+            <li class="page-item">
+              <a class="page-link" href="?page=1&month={{ month }}&year={{ year }}">Đầu</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ budgets.previous_page_number }}&month={{ month }}&year={{ year }}">Trước</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Đầu</span></li>
+            <li class="page-item disabled"><span class="page-link">Trước</span></li>
+            {% endif %}
+            
+            <li class="page-item active"><span class="page-link">{{ budgets.number }} / {{ paginator.num_pages }}</span></li>
+            
+            {% if budgets.has_next %}
+            <li class="page-item">
+              <a class="page-link" href="?page={{ budgets.next_page_number }}&month={{ month }}&year={{ year }}">Sau</a>
+            </li>
+            <li class="page-item">
+              <a class="page-link" href="?page={{ paginator.num_pages }}&month={{ month }}&year={{ year }}">Cuối</a>
+            </li>
+            {% else %}
+            <li class="page-item disabled"><span class="page-link">Sau</span></li>
+            <li class="page-item disabled"><span class="page-link">Cuối</span></li>
+            {% endif %}
+          </ul>
+        </nav>
+        {% endif %}
+    {% else %}
+        <div class="alert alert-info">
+            <p class="mb-0">Bạn chưa có ngân sách nào cho tháng {{ month }}/{{ year }}. <a href="{% url 'budget_add' %}">Tạo ngân sách ngay</a></p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -1,0 +1,111 @@
+/* ============================================
+   Jazzmin Admin Dashboard - Modern UI Design
+   ============================================ */
+
+:root {
+  --primary: #10b981;
+  --primary-light: #d1fae5;
+  --primary-dark: #059669;
+  --text-dark: #1a1a1a;
+  --text-muted: #666;
+  --border: #e5e5e5;
+  --bg-light: #f9fafb;
+}
+
+/* ─── Dashboard Container ─── */
+#container {
+  background: #f9fafb !important;
+}
+
+/* ─── Dashboard Module Links - Clean Design with Green ─── */
+.dashboard .module a {
+  text-decoration: none !important;
+  padding: 12px 16px !important;
+  display: inline-block !important;
+  border-radius: 8px;
+  margin: 6px 0 !important;
+  transition: all 0.25s ease;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--text-dark) !important;
+  background: #fff !important;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  position: relative;
+  overflow: hidden;
+}
+
+.dashboard .module a::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 3px;
+  background: linear-gradient(180deg, var(--primary), transparent);
+  opacity: 0;
+  transition: opacity 0.25s ease;
+}
+
+.dashboard .module a:hover {
+  border-left-color: var(--primary-dark);
+  background: var(--primary-light) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  transform: translateX(4px);
+  color: var(--primary-dark) !important;
+}
+
+.dashboard .module a:hover::before {
+  opacity: 1;
+}
+
+/* ─── Default Style for All Models ─── */
+a[href*='finance/category/'],
+a[href*='finance/transaction/'],
+a[href*='finance/budget/'],
+a[href*='finance/goal/'],
+a[href*='finance/chatmessage/'],
+a[href*='finance/aisuggestion/'],
+a[href*='finance/userprofile/'],
+a[href*='auth/user/'],
+a[href*='auth/group/'] {
+  font-weight: 500;
+  color: var(--text-dark) !important;
+  background: #fff !important;
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--primary);
+  border-radius: 8px;
+  padding: 12px 16px;
+  margin: 6px 0;
+  display: inline-block;
+  text-decoration: none !important;
+  transition: all 0.25s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+}
+
+/* Hover Effect for All Links */
+a[href*='finance/category/']:hover,
+a[href*='finance/transaction/']:hover,
+a[href*='finance/budget/']:hover,
+a[href*='finance/goal/']:hover,
+a[href*='finance/chatmessage/']:hover,
+a[href*='finance/aisuggestion/']:hover,
+a[href*='finance/userprofile/']:hover,
+a[href*='auth/user/']:hover,
+a[href*='auth/group/']:hover {
+  background: var(--primary-light) !important;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.2);
+  transform: translateX(4px);
+  color: var(--primary-dark) !important;
+  border-left-color: var(--primary-dark) !important;
+}
+
+/* ─── Responsive Design ─── */
+@media (max-width: 768px) {
+  .dashboard .module a {
+    padding: 10px 12px !important;
+    font-size: 13px;
+    margin: 4px 0 !important;
+  }
+}
