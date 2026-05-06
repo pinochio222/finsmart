@@ -1,339 +1,323 @@
-# FinSmart — Quản Lý Tài Chính Thông Minh
+# FinSmart - Django Finance Management System
 
-> Ứng dụng quản lý tài chính cá nhân dành cho sinh viên Việt Nam  
-> **Django 5.2 (Python 3.11) · Bootstrap 5 · Chart.js · Groq AI · SQL Server / PostgreSQL**
+A comprehensive personal finance management application built with Django. FinSmart helps users track transactions, manage budgets, set financial goals, and get AI-powered financial suggestions.
 
----
+## 🚀 Features
 
-## Mục lục
+- **Transaction Management**: Record and categorize financial transactions
+- **Budget Tracking**: Create and monitor budgets across different categories
+- **Financial Goals**: Set and track progress toward financial goals
+- **AI Suggestions**: Get AI-powered insights and recommendations for better financial decisions
+- **User Authentication**: Secure user registration and login system
+- **Admin Dashboard**: Comprehensive admin panel for system management
+- **Analytics**: Visual analytics and reports for financial data
+- **Responsive UI**: Mobile-friendly interface built with Bootstrap
 
-1. [Giới thiệu](#1-giới-thiệu)
-2. [Tính năng](#2-tính-năng)
-3. [Tech Stack](#3-tech-stack)
-4. [Cấu trúc dự án](#4-cấu-trúc-dự-án)
-5. [Cài đặt & Chạy Local](#5-cài-đặt--chạy-local)
-6. [Cấu hình Database](#6-cấu-hình-database)
-7. [Tài khoản demo](#7-tài-khoản-demo)
-8. [Hướng dẫn sử dụng](#8-hướng-dẫn-sử-dụng)
-9. [AI Chatbot](#9-ai-chatbot)
+## 📋 Requirements
 
----
+- Python 3.8+
+- Django 3.2+
+- PostgreSQL (or SQLite for development)
+- Node.js (for static assets)
 
-## 1. Giới thiệu
+## 🛠️ Installation
 
-**FinSmart** là ứng dụng web quản lý tài chính cá nhân được thiết kế đặc biệt cho sinh viên Việt Nam. Ứng dụng giúp theo dõi thu nhập, chi tiêu, lập ngân sách và đặt mục tiêu tiết kiệm — tất cả trong một giao diện tiếng Việt thân thiện, responsive, không cần cài đặt bất kỳ phần mềm nào phía client.
+### 1. Clone the Repository
 
-Điểm nổi bật là tính năng **AI Tư vấn** sử dụng mô hình ngôn ngữ lớn **Llama 3.3-70B** (qua Groq API) để phân tích tài chính và đưa ra lời khuyên cá nhân hóa bằng tiếng Việt.
-
-Kiến trúc: **MVT** (Model — View — Template) của Django.
-
----
-
-## 2. Tính năng
-
-### Xác thực người dùng
-- Đăng ký tài khoản với họ tên, email, mật khẩu
-- Validation tiếng Việt: tối thiểu 8 ký tự, phải có chữ cái, không quá đơn giản
-- Đăng nhập / Đăng xuất bảo mật qua Django session
-- Mỗi người dùng có dữ liệu hoàn toàn riêng biệt
-
-### Dashboard Tổng quan
-- Số dư hiện tại (xanh khi dương, đỏ khi âm)
-- Tổng thu nhập và tổng chi tiêu trong tháng
-- Biểu đồ tròn (Chart.js) — phân bổ chi tiêu theo danh mục
-- Biểu đồ cột — thu nhập vs chi tiêu 6 tháng gần nhất
-- 5 giao dịch gần nhất
-- Cảnh báo ngân sách vượt hạn mức
-- Tiến độ mục tiêu tiết kiệm
-- Gợi ý nhanh từ AI
-
-### Quản lý Giao dịch
-- Thêm giao dịch thu nhập hoặc chi tiêu (mô tả, số tiền VNĐ, ngày, danh mục, ghi chú)
-- Danh sách dạng bảng với bộ lọc theo tháng/năm, loại, danh mục
-- Sửa và xóa giao dịch
-
-### Quản lý Danh mục
-- 16 danh mục mặc định đa màu sắc (ăn uống, di chuyển, học tập, lương...)
-- Thêm danh mục tùy chỉnh (tên, màu sắc, loại thu/chi)
-- Sửa và **xóa** cả danh mục tự tạo lẫn danh mục mặc định
-- Modal xác nhận trước khi xóa (cảnh báo nếu xóa danh mục mặc định)
-
-### Quản lý Ngân sách
-- Tạo ngân sách cho từng danh mục theo tháng/năm
-- Thanh tiến độ: xanh (< 80%), vàng (80–100%), đỏ (> 100%)
-- Cảnh báo vượt ngân sách tức thì
-- Sửa / xóa ngân sách
-
-### Mục tiêu Tiết kiệm
-- Tạo mục tiêu với tên, số tiền, ngày deadline
-- Nạp tiền vào mục tiêu (cộng dồn từng lần)
-- Thanh tiến độ %, số ngày còn lại, số tiền cần tiết kiệm mỗi ngày
-- Badge trạng thái: Đang thực hiện / Hoàn thành / Quá hạn
-
-### AI Tư vấn Tài chính
-- Chatbot Llama 3.3-70B (Groq API) — miễn phí, không cần key riêng
-- Tự động đính kèm dữ liệu tài chính thực của người dùng vào prompt
-- 4 câu gợi ý nhanh (click để hỏi ngay)
-- Lưu và xóa lịch sử chat
-
-### Hồ sơ Cá nhân
-- Cập nhật họ tên, đổi mật khẩu
-- Thống kê tài khoản: ngày tham gia, tổng giao dịch, số danh mục
-
-### Trang Quản trị (Django Admin)
-- Quản lý toàn bộ dữ liệu: Users, Categories, Transactions, Budgets, Goals
-- Truy cập tại `/admin/`
-
----
-
-## 3. Tech Stack
-
-| Thành phần | Công nghệ | Phiên bản |
-|-----------|----------|----------|
-| Ngôn ngữ backend | Python | 3.11 |
-| Web framework | Django (MVT pattern) | 5.2 |
-| Production server | Gunicorn | 25.3 |
-| Static files | WhiteNoise | — |
-| Database chính | Microsoft SQL Server | 2019+ |
-| Database dự phòng | PostgreSQL | 14+ |
-| Django–SQL Server | mssql-django | 1.7 |
-| ORM | Django ORM (thuần — không dùng thư viện thứ ba) | — |
-| CSS Framework | Bootstrap | 5.3 |
-| Biểu đồ | Chart.js | 4.4 |
-| Icons | Bootstrap Icons | 1.11 |
-| Template | Django HTML Templates (server-side render) | — |
-| AI Chatbot | Groq API — llama-3.3-70b-versatile | — |
-| Auth | Django built-in (session-based) | — |
-| Timezone | Asia/Ho_Chi_Minh | — |
-
-> Không sử dụng bất kỳ JavaScript framework nào (React, Vue, Angular). Toàn bộ giao diện render phía server.
-
----
-
-## 4. Cấu trúc dự án
-
-```
-finsmart_django/
-├── finsmart/                        # Django project config
-│   ├── settings.py                  # Cài đặt: DB, apps, static, Groq...
-│   ├── urls.py                      # URL routing gốc
-│   └── wsgi.py                      # WSGI entry point (Gunicorn)
-│
-├── finance/                         # App quản lý tài chính
-│   ├── models.py                    # Category, Transaction, Budget, Goal,
-│   │                                #   ChatMessage, AISuggestion
-│   ├── views.py                     # Tất cả views: auth, CRUD, AI chat
-│   ├── forms.py                     # Django Forms + validation tiếng Việt
-│   ├── urls.py                      # URL patterns của app
-│   └── management/commands/
-│       ├── seed_categories.py       # Tạo 16 danh mục mặc định
-│       ├── create_test_user.py      # Tạo tài khoản demo
-│       └── create_superuser_auto.py # Tạo admin tự động
-│
-├── templates/finance/               # HTML templates (Bootstrap 5)
-│   ├── base.html                    # Layout: sidebar + navbar + messages
-│   ├── login.html / register.html
-│   ├── dashboard.html               # Chart.js biểu đồ tròn + cột
-│   ├── transactions.html            # Danh sách + bộ lọc
-│   ├── transaction_form.html        # Thêm / sửa giao dịch
-│   ├── categories.html              # Card danh mục + modal xóa
-│   ├── budgets.html                 # Thanh tiến độ ngân sách
-│   ├── goals.html                   # Mục tiêu + nạp tiền
-│   ├── ai_chat.html                 # Giao diện chat AI
-│   └── profile.html
-│
-├── static/
-│   └── css/custom.css               # CSS tùy chỉnh
-│
-├── migrations/                      # Django migrations
-│   ├── 0001_initial.py
-│   ├── 0002_userprofile.py
-│   └── 0003_chatmessage_session_key.py
-│
-└── manage.py
+```bash
+git clone https://github.com/pinochio222/finsmart.git
+cd Document-Report-Writer
 ```
 
-### Models
+### 2. Create Virtual Environment
 
-```python
-Category     # id, name, type(income/expense), icon, color, is_default, user, created_at
-Transaction  # id, user, type, amount, description, note, date, category, created_at
-Budget       # id, user, month, year, amount, category, created_at
-Goal         # id, user, name, target_amount, current_amount, deadline, icon, created_at
-ChatMessage  # id, user, role(user/assistant), content, created_at
-AISuggestion # id, user, type, title, message, priority, created_at
+```bash
+# For Windows
+python -m venv finsmart_django/.venv
+finsmart_django\.venv\Scripts\Activate.ps1
+
+# For macOS/Linux
+python3 -m venv finsmart_django/.venv
+source finsmart_django/.venv/bin/activate
 ```
 
----
-
-## 5. Cài đặt & Chạy Local
-
-### Yêu cầu hệ thống
-- Python 3.11+
-- SQL Server 2019+ (hoặc PostgreSQL 14+)
-- ODBC Driver 17 for SQL Server *(nếu dùng SQL Server)*
-
-### Bước 1 — Clone và cài packages
+### 3. Install Dependencies
 
 ```bash
 cd finsmart_django
-
-# Cài đặt tất cả packages từ requirements.txt
 pip install -r requirements.txt
 ```
 
-### Bước 2 — Tạo file `.env`
+### 4. Environment Configuration
 
+Create a `.env` file in `finsmart_django/` directory based on `.env.example`:
+
+```bash
+cp .env.example .env
+```
+
+Edit `.env` and add your configuration:
 ```env
-# Chọn loại database: 'mssql' hoặc 'postgresql'
-DB_BACKEND=mssql
-
-# SQL Server
-MSSQL_HOST=localhost
-MSSQL_PORT=1433
-MSSQL_DB=FinSmartDB
-MSSQL_USER=sa
-MSSQL_PASSWORD=YourStrongPassword
-
-# PostgreSQL (nếu DB_BACKEND=postgresql)
-DATABASE_URL=postgresql://user:password@localhost:5432/finsmart
-
-# Django
-SESSION_SECRET=thay-bang-chuoi-ngau-nhien-dai-32-ky-tu
-
-# Groq AI
-GROQ_API_KEY=gsk_xxxxxxxxxxxxxxxxxxxxxxxxxx
+DEBUG=True
+SECRET_KEY=your-secret-key
+DATABASE_URL=your-database-url
 ```
 
-### Bước 3 — Tạo database SQL Server
-
-Chạy file `database.sql` trong SQL Server Management Studio (SSMS) hoặc Azure Data Studio:
-
-```sql
--- Mở file và chạy:
--- database.sql
-```
-
-Hoặc qua command line:
+### 5. Database Setup
 
 ```bash
-sqlcmd -S localhost -U sa -P YourPassword -i database.sql
-```
-
-### Bước 4 — Migrate và seed dữ liệu
-
-```bash
-cd finsmart_django
-
-# Chạy migrations Django
-python manage.py migrate --run-syncdb
-
-# Tạo 16 danh mục mặc định
+python manage.py migrate
+python manage.py create_superuser_auto
 python manage.py seed_categories
+python manage.py create_test_user
+```
 
-# Tạo tài khoản demo
+### 6. Create Test Data (Optional)
+
+```bash
+python create_test_data.py
+```
+
+## 🚀 Running the Application
+
+### Development Server
+
+```bash
+python manage.py runserver
+```
+
+Access the application at: `http://localhost:8000`
+
+Admin panel: `http://localhost:8000/admin`
+
+### Production Server
+
+```bash
+bash start_production.sh
+```
+
+## 📁 Project Structure
+
+```
+finsmart_django/
+├── finance/                 # Main finance app
+│   ├── models.py           # Database models
+│   ├── views.py            # View functions
+│   ├── urls.py             # URL routing
+│   ├── forms.py            # Form definitions
+│   ├── admin.py            # Admin configuration
+│   ├── ai_suggestions.py   # AI module
+│   ├── signals.py          # Django signals
+│   ├── management/         # Custom management commands
+│   ├── migrations/         # Database migrations
+│   ├── templatetags/       # Custom template filters
+│   └── templates/          # HTML templates
+├── finsmart/               # Project settings
+│   ├── settings.py         # Django settings
+│   ├── urls.py             # Main URL router
+│   └── wsgi.py             # WSGI configuration
+├── static/                 # Static files (CSS, JS)
+├── templates/              # Global templates
+├── media/                  # User uploaded files
+├── manage.py               # Django management
+└── requirements.txt        # Python dependencies
+```
+
+## 💾 Database Models
+
+### Core Models
+- **User** (Django Auth User)
+- **UserProfile**: Extended user information
+- **Transaction**: Financial transactions
+- **Budget**: Budget planning and tracking
+- **Category**: Transaction categories
+- **Goal**: Financial goals
+- **ChatMessage**: AI chat messages
+- **AISuggestion**: AI-generated suggestions
+
+## 🔐 Authentication
+
+- User registration and login
+- Session-based authentication
+- Admin user management
+- Role-based access control
+
+## 🤖 AI Features
+
+- AI-powered financial suggestions
+- Conversation monitoring
+- Prompt configuration
+- Training data management
+
+## 📊 Admin Features
+
+- Complete user management
+- Analytics dashboard
+- System reports
+- AI operations management
+- Data analysis tools
+
+## 🔧 Management Commands
+
+```bash
+# Create superuser automatically
+python manage.py create_superuser_auto
+
+# Create test user
 python manage.py create_test_user
 
-# Tạo tài khoản quản trị viên
-python manage.py create_superuser_auto
+# Seed categories
+python manage.py seed_categories
+
+# Fix goal icons
+python manage.py fix_goal_icons
 ```
 
-### Bước 5 — Chạy server local
+## 📝 Migrations
+
+To create new migrations after model changes:
 
 ```bash
-# Development
-python manage.py runserver 0.0.0.0:8000
+python manage.py makemigrations
+python manage.py migrate
 ```
 
-Mở trình duyệt: `http://localhost:8000`
+View migration history:
 
----
-
-## 6. Cấu hình Database
-
-### SQL Server (Khuyến nghị)
-
-Cài ODBC Driver 17 for SQL Server:
-
-**Windows:** Tải tại [https://aka.ms/sqlodbc](https://aka.ms/sqlodbc)
-
-**Ubuntu/Debian:**
 ```bash
-curl https://packages.microsoft.com/keys/microsoft.asc | sudo apt-key add -
-curl https://packages.microsoft.com/config/ubuntu/20.04/prod.list \
-    | sudo tee /etc/apt/sources.list.d/mssql-release.list
-sudo apt-get update
-sudo ACCEPT_EULA=Y apt-get install -y msodbcsql17
+python manage.py showmigrations
 ```
 
-Cấu hình trong `.env`:
-```env
-DB_BACKEND=mssql
-MSSQL_HOST=localhost       # Tên server hoặc IP
-MSSQL_PORT=1433            # Cổng mặc định SQL Server
-MSSQL_DB=FinSmartDB        # Tên database (tạo trước bằng SSMS)
-MSSQL_USER=sa              # Tài khoản SQL Server Authentication
-MSSQL_PASSWORD=Abc@12345   # Mật khẩu (tối thiểu 8 ký tự, có chữ hoa/số/ký tự đặc biệt)
+## 🧪 Testing
+
+```bash
+python manage.py test
 ```
 
-**Windows Authentication** (không cần user/password):
-```python
-# Trong settings.py → OPTIONS:
-'Trusted_Connection': 'yes',
+## 📚 API Endpoints
+
+### Authentication
+- `POST /login` - User login
+- `POST /register` - User registration
+- `GET /logout` - User logout
+
+### Transactions
+- `GET /transactions/` - List transactions
+- `POST /transaction/create/` - Create transaction
+- `PUT /transaction/<id>/edit/` - Edit transaction
+- `DELETE /transaction/<id>/delete/` - Delete transaction
+- `POST /transactions/bulk-import/` - Bulk import transactions
+
+### Budgets
+- `GET /budgets/` - List budgets
+- `POST /budget/create/` - Create budget
+- `PUT /budget/<id>/edit/` - Edit budget
+- `DELETE /budget/<id>/delete/` - Delete budget
+
+### Goals
+- `GET /goals/` - List goals
+- `POST /goal/create/` - Create goal
+- `PUT /goal/<id>/edit/` - Edit goal
+- `DELETE /goal/<id>/delete/` - Delete goal
+- `POST /goal/<id>/deposit/` - Add deposit to goal
+
+### Categories
+- `GET /categories/` - List categories
+- `POST /category/create/` - Create category
+
+### Analytics
+- `GET /dashboard/` - Main dashboard
+- `GET /analytics/` - Analytics page
+
+### AI Features
+- `GET /ai/` - AI chat interface
+- `POST /ai/suggest/` - Get AI suggestions
+
+## 🎨 Frontend Technologies
+
+- Bootstrap 5
+- JQuery
+- Select2
+- FontAwesome Icons
+- AdminLTE Dashboard
+- Jazzmin Admin Interface
+
+## 🔒 Security Features
+
+- CSRF protection
+- SQL injection prevention
+- XSS protection
+- Password hashing
+- Session management
+
+## 📖 Documentation
+
+For more detailed information, see:
+- [Setup Guide](SETUP.md)
+- [Database Documentation](DONG_BO_DATABASE_HOAN_TAT.md)
+- [User Guide](HUONG_DAN_SU_DUNG_FINSMART.md)
+- [Sequence Diagrams](SO_DO_TUAN_TU_CHINH_SUA_NGUOI_DUNG.puml)
+
+## 👤 Author
+
+- **pinochio222** - Initial work
+
+## 📄 License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## 🤝 Contributing
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## 📧 Support
+
+For support, email pinochio222@example.com or open an issue on GitHub.
+
+## 🚀 Deployment
+
+### Using Production Script
+
+```bash
+bash finsmart_django/start_production.sh
 ```
 
-### PostgreSQL
+### Manual Deployment
 
-```env
-DB_BACKEND=postgresql
-DATABASE_URL=postgresql://username:password@localhost:5432/finsmart
+```bash
+# Collect static files
+python manage.py collectstatic --noinput
+
+# Run with Gunicorn
+gunicorn finsmart.wsgi:application --bind 0.0.0.0:8000
 ```
 
-### SQLite (chỉ dev, không cần cài gì)
+## 📝 Version History
 
-```env
-# Bỏ trống DB_BACKEND và DATABASE_URL → tự động dùng SQLite
-```
+- **v1.0.0** - Initial release
+  - Transaction management
+  - Budget tracking
+  - Financial goals
+  - AI suggestions
+  - User authentication
+  - Admin dashboard
 
----
+## 🎯 Roadmap
 
-## 7. Tài khoản demo
+- [ ] Mobile app (React Native)
+- [ ] Advanced analytics
+- [ ] Multi-currency support
+- [ ] Bank integration
+- [ ] Investment tracking
+- [ ] Tax reporting
 
-| Vai trò | Email | Mật khẩu |
-|---------|-------|---------|
-| Người dùng thường | test@finsmart.vn | Test123456 |
-| Quản trị viên | admin@finsmart.vn | Admin@FinSmart2026 |
+## 🙏 Acknowledgments
 
----
-
-## 8. Hướng dẫn sử dụng
-
-**Bắt đầu nhanh:**
-1. Đăng ký tài khoản → tự động tạo 16 danh mục mặc định
-2. Vào **Giao dịch** → thêm thu nhập (lương tháng này)
-3. Vào **Ngân sách** → đặt hạn mức chi tiêu từng danh mục
-4. Vào **Mục tiêu** → đặt mục tiêu tiết kiệm (mua laptop, du lịch...)
-5. Vào **AI Tư vấn** → hỏi chatbot để nhận lời khuyên cá nhân hóa
-
-**Tips:**
-- Nhập giao dịch hàng ngày để có báo cáo chính xác
-- Dashboard cập nhật theo thời gian thực mỗi lần reload
-- Hỏi AI: *"Tôi có thể cắt giảm chi tiêu ở đâu?"*
-
----
-
-## 9. AI Chatbot
-
-| Thông số | Giá trị |
-|---------|---------|
-| Provider | Groq (miễn phí) |
-| Model | llama-3.3-70b-versatile |
-| Ngôn ngữ | Tiếng Việt |
-| Endpoint | POST `/ai/chat/` (AJAX JSON) |
-| Context | Số dư, thu chi tháng, ngân sách, mục tiêu |
-
-Chatbot nhận dữ liệu tài chính thực của người dùng tự động — không cần nhập thủ công.
-
----
-
-*Dự án FinSmart — Đồ án môn học Lập trình Web | Năm học 2025–2026*
+- Django community
+- Bootstrap team
+- AdminLTE dashboard
+- All contributors
