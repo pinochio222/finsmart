@@ -60,3 +60,10 @@ media/
 # Django static files
 staticfiles/
 */staticfiles/
+
+# Python compiled files
+__pycache__/
+*/__pycache__/
+*.pyc
+*.pyo
+*.pyd
