@@ -152,15 +152,21 @@ class Budget(models.Model):
     def daily_budget_remaining(self):
         """Ngân sách còn lại mỗi ngày"""
         from datetime import date
+        from calendar import monthrange
+        
         today = date.today()
+        
         # Tính ngày cuối cùng của tháng
-        if today.month == 12:
-            last_day = date(today.year + 1, 1, 1)
-        else:
-            last_day = date(today.year, today.month + 1, 1)
-        days_left = (last_day - today).days
+        last_day_of_month = monthrange(today.year, today.month)[1]
+        last_date = date(today.year, today.month, last_day_of_month)
+        
+        # Số ngày còn lại (không tính ngày hôm nay)
+        days_left = (last_date - today).days
+        
         if days_left <= 0:
             return 0
+        
+        # Chia đều ngân sách còn lại cho số ngày còn lại
         return self.remaining_budget_current_month // days_left
 
     @property
@@ -315,10 +321,19 @@ class Goal(models.Model):
             return None
         from datetime import date
         today = date.today()
-        months = (self.deadline.year - today.year) * 12 + (self.deadline.month - today.month)
-        if months <= 0:
-            return None
-        return int(self.remaining / months)
+        
+        # Tính số ngày còn lại
+        days_left = (self.deadline - today).days
+        
+        if days_left <= 0:
+            # Đã quá hạn, trả về số tiền còn lại (cần nạp ngay)
+            return self.remaining
+        
+        # Ước tính 30 ngày = 1 tháng
+        months_left = days_left / 30.0
+        
+        # Tính tiền cần tiết kiệm mỗi tháng
+        return int(self.remaining / months_left)
 
     @property
     def circle_progress(self):

@@ -179,17 +179,15 @@ class AdminUserUpdateForm(forms.ModelForm):
 class CategoryForm(forms.ModelForm):
     class Meta:
         model = Category
-        fields = ['name', 'type', 'icon', 'color']
+        fields = ['name', 'type', 'color']
         labels = {
             'name': 'Tên danh mục',
             'type': 'Loại',
-            'icon': 'Icon',
             'color': 'Màu sắc'
         }
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control'}),
             'type': forms.Select(attrs={'class': 'form-select'}),
-            'icon': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '😋'}),
             'color': forms.TextInput(attrs={'class': 'form-control', 'type': 'color'}),
         }
 
@@ -215,9 +213,10 @@ class TransactionForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user:
             from django.db.models import Q
+            # Hiển thị cả danh mục của user VÀ danh mục mặc định (khớp với trang /categories/)
             self.fields['category'].queryset = Category.objects.filter(
-                Q(is_default=True) | Q(user=user)
-            )
+                Q(user=user) | Q(is_default=True)
+            ).order_by('type', 'name')
 
 
 class BulkTransactionForm(forms.Form):
@@ -328,9 +327,10 @@ class BudgetForm(forms.ModelForm):
         super().__init__(*args, **kwargs)
         if user:
             from django.db.models import Q
+            # Hiển thị cả danh mục chi tiêu của user VÀ danh mục mặc định (khớp với trang /categories/)
             self.fields['category'].queryset = Category.objects.filter(
-                Q(is_default=True) | Q(user=user), type='expense'
-            )
+                Q(user=user, type='expense') | Q(is_default=True, type='expense')
+            ).order_by('name')
         self.fields['category'].required = False
         self.fields['category'].empty_label = '-- Tất cả chi tiêu --'
 
@@ -354,6 +354,34 @@ class GoalForm(forms.ModelForm):
 
     def __init__(self, *args, user=None, **kwargs):
         super().__init__(*args, **kwargs)
+        # Thêm min date cho deadline (ngày mai)
+        from datetime import date, timedelta
+        tomorrow = date.today() + timedelta(days=1)
+        self.fields['deadline'].widget.attrs['min'] = tomorrow.strftime('%Y-%m-%d')
+        
+        # Nếu đã nạp tiền (current_amount > 0), khóa trường "Tên mục tiêu"
+        if self.instance and self.instance.pk and int(self.instance.current_amount) > 0:
+            self.fields['name'].disabled = True
+            self.fields['name'].widget.attrs['readonly'] = True
+            self.fields['name'].widget.attrs['class'] += ' bg-light'
+            self.fields['name'].help_text = '⚠️ Không thể đổi tên sau khi đã nạp tiền (để đảm bảo hoàn tiền khi xóa)'
+    
+    def clean_deadline(self):
+        deadline = self.cleaned_data.get('deadline')
+        if deadline:
+            from datetime import date
+            today = date.today()
+            if deadline <= today:
+                raise ValidationError('Hạn chót phải là ngày trong tương lai (sau ngày hôm nay).')
+        return deadline
+    
+    def clean_target_amount(self):
+        target_amount = self.cleaned_data.get('target_amount')
+        # Nếu đã nạp tiền, số tiền mục tiêu phải >= số tiền đã nạp
+        if self.instance and self.instance.pk and int(self.instance.current_amount) > 0:
+            if target_amount < self.instance.current_amount:
+                raise ValidationError(f'Số tiền mục tiêu phải lớn hơn hoặc bằng số tiền đã nạp ({int(self.instance.current_amount):,}đ).')
+        return target_amount
     
     def save(self, commit=True):
         goal = super().save(commit=False)

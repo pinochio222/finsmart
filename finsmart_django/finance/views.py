@@ -443,7 +443,14 @@ def category_add(request):
 
 @login_required
 def category_edit(request, pk):
-    cat = get_object_or_404(Category, pk=pk, user=request.user)
+    # Cho phép sửa category của user hoặc default category
+    cat = get_object_or_404(Category, pk=pk)
+    
+    # Kiểm tra quyền: Chỉ cho phép sửa nếu là category của user hoặc là default category
+    if cat.user and cat.user != request.user:
+        messages.error(request, 'Bạn không có quyền sửa danh mục này!')
+        return redirect('categories')
+    
     if request.method == 'POST':
         form = CategoryForm(request.POST, instance=cat)
         if form.is_valid():
@@ -696,6 +703,19 @@ def goal_deposit(request, pk):
                 month_remaining = data['income'] - data['expense']
                 total_remaining += max(month_remaining, 0)
         
+        # Tính số tiền còn thiếu để đạt mục tiêu
+        remaining_to_goal = max(int(g.target_amount) - int(g.current_amount), 0)
+        
+        # Số tiền nạp tối đa = min(số tiền còn thiếu, tổng số dư hiện có)
+        max_deposit = min(remaining_to_goal, total_remaining)
+        
+        if amount > max_deposit:
+            if remaining_to_goal < total_remaining:
+                messages.error(request, f'Số tiền nạp vượt quá số tiền còn thiếu ({remaining_to_goal:,}đ)! Bạn chỉ cần nạp tối đa {max_deposit:,}đ để đạt mục tiêu.')
+            else:
+                messages.error(request, f'Số tiền nạp vượt quá tổng số dư hiện có ({total_remaining:,}đ)!')
+            return redirect('goals')
+        
         if amount > total_remaining:
             messages.error(request, f'Số tiền nạp vượt quá tổng số dư hiện có ({total_remaining:,}đ)!')
             return redirect('goals')
@@ -769,9 +789,17 @@ def goal_deposit(request, pk):
             month_remaining = data['income'] - data['expense']
             total_remaining += max(month_remaining, 0)
     
+    # Tính số tiền còn thiếu để đạt mục tiêu
+    remaining_to_goal = max(int(g.target_amount) - int(g.current_amount), 0)
+    
+    # Số tiền nạp tối đa = min(số tiền còn thiếu, tổng số dư hiện có)
+    max_deposit = min(remaining_to_goal, total_remaining)
+    
     return render(request, 'finance/goal_deposit.html', {
         'goal': g,
         'total_remaining': total_remaining,
+        'max_deposit': max_deposit,
+        'remaining_to_goal': remaining_to_goal,
     })
 
 
@@ -781,25 +809,52 @@ def goal_delete(request, pk):
     
     g = get_object_or_404(Goal, pk=pk, user=request.user)
     if request.method == 'POST':
-        # Hoàn lại số tiền đã nạp vào tổng số dư
-        if int(g.current_amount) > 0:
-            # Lấy danh mục "Nạp tiền tiết kiệm"
-            category = Category.objects.filter(
+        goal_name = g.name
+        current_amount = int(g.current_amount)
+        
+        # Hoàn lại số tiền bằng cách xóa các giao dịch chi tiêu đã nạp
+        if current_amount > 0:
+            # Lấy danh mục "Nạp tiền tiết kiệm" (chi tiêu)
+            expense_category = Category.objects.filter(
                 user=request.user,
-                name='Nạp tiền tiết kiệm'
+                name='Nạp tiền tiết kiệm',
+                type='expense'
             ).first()
             
-            if category:
-                # Xóa tất cả giao dịch chi tiêu liên quan đến mục tiêu này
-                Transaction.objects.filter(
+            if expense_category:
+                # Dùng description chính xác để tránh xóa nhầm
+                exact_description = f'Nạp tiền vào mục tiêu "{goal_name}"'
+                
+                # Tìm tất cả giao dịch liên quan
+                related_transactions = Transaction.objects.filter(
                     user=request.user,
                     type='expense',
-                    category=category,
-                    description__contains=g.name
-                ).delete()
+                    category=expense_category,
+                    description=exact_description
+                )
+                
+                # Debug: Kiểm tra số lượng giao dịch tìm thấy
+                count = related_transactions.count()
+                total_amount = sum(int(tx.amount) for tx in related_transactions)
+                
+                # Xóa các giao dịch
+                deleted_count = related_transactions.delete()[0]
+                
+                if deleted_count > 0:
+                    messages.info(request, f'Đã xóa {deleted_count} giao dịch nạp tiền (tổng {total_amount:,}đ).')
+                else:
+                    # Không tìm thấy giao dịch nào
+                    messages.warning(request, f'Không tìm thấy giao dịch nạp tiền để hoàn lại. Có thể giao dịch đã bị xóa thủ công.')
+            else:
+                messages.warning(request, f'Không tìm thấy danh mục "Nạp tiền tiết kiệm". Không thể hoàn lại tiền.')
         
         g.delete()
-        messages.success(request, 'Đã xóa mục tiêu và hoàn lại số tiền!')
+        
+        if current_amount > 0:
+            messages.success(request, f'Đã xóa mục tiêu "{goal_name}"!')
+        else:
+            messages.success(request, f'Đã xóa mục tiêu "{goal_name}"!')
+        
         return redirect('goals')
     return render(request, 'finance/goal_confirm_delete.html', {'object': g})
 

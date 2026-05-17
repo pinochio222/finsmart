@@ -47,10 +47,13 @@
                                    placeholder="Nhập số tiền"
                                    min="1000"
                                    step="1000"
-                                   max="{{ total_remaining }}"
+                                   max="{{ max_deposit }}"
                                    required>
                             <small class="text-muted d-block mt-1">
-                                Tối đa: {{ total_remaining|comma_money }}đ
+                                Tối đa: {{ max_deposit|comma_money }}đ
+                                {% if max_deposit < total_remaining %}
+                                <span class="text-info">(Giới hạn theo số tiền còn thiếu: {{ remaining_to_goal|comma_money }}đ)</span>
+                                {% endif %}
                             </small>
                         </div>
 
